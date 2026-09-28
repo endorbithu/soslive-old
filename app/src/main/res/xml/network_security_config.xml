@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The mock backend runs over plain HTTP. Cleartext is allowed so the app can reach it on
+  the emulator host (10.0.2.2), localhost or a LAN IP. The real backend should be HTTPS -
+  then set cleartextTrafficPermitted="false" here.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,2 +1,0 @@
-Android NDK: ERROR:C:/Users/admin/AndroidStudioProjects/soslive/library/src/main/cpp/libx264/Android.mk:x264: LOCAL_SRC_FILES points to a missing file    
-Android NDK: Check that C:/Users/admin/AndroidStudioProjects/soslive/library/src/main/cpp/libx264/libs/armeabi-v7a/libx264.a exists  or that its path is correct   

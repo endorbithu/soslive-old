@@ -1,0 +1,27 @@
+# Local dev stack.
+#   docker compose up                    -> mock backend only (uses mock-server/.env)
+#   docker compose --profile rtmp up     -> + MediaMTX RTMP server on :1935
+#       set RTMP_URL=rtmp://<your-LAN-IP>:1935/live in mock-server/.env
+#       (the phone/emulator must reach it; emulator: rtmp://10.0.2.2:1935/live)
+#       watch: ffplay rtmp://localhost:1935/live/<streamKey>
+services:
+  mock-server:
+    build: ./mock-server
+    env_file: ./mock-server/.env
+    environment:
+      DB_FILE: /data/db.json
+      UPLOAD_DIR: /data/uploads
+    ports:
+      - "3000:3000"
+    volumes:
+      - mock-data:/data
+
+  mediamtx:
+    profiles: ["rtmp"]
+    image: bluenviron/mediamtx:latest
+    ports:
+      - "1935:1935"   # RTMP
+      - "8888:8888"   # HLS  (http://localhost:8888/live/<streamKey>)
+
+volumes:
+  mock-data:

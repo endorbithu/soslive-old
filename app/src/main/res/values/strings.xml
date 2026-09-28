@@ -1,19 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SOSlive</string>
-    <string name="facebook_app_id">185399761984835</string>
-    <string name="fb_login_protocol_scheme">fb185399761984835</string>
-    <string name="title_activity_login">SOSlive</string>
+    <string name="app_name" translatable="false">SOSlive</string>
+    <string name="title_with_event">SOSlive – #%1$d</string>
 
-    <!-- Strings related to login -->
-    <string name="prompt_email">Username</string>
-    <string name="prompt_password">Password</string>
-    <string name="action_sign_in">Sign in</string>
-    <string name="action_sign_in_short">Sign in</string>
-    <string name="error_invalid_email">This email address is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
-    <string name="error_incorrect_password">This password is incorrect</string>
-    <string name="error_field_required">This field is required</string>
-    <string name="permission_rationale">"Contacts permissions are needed for providing email
-        completions."
-    </string>
+    <!-- Auth -->
+    <string name="field_email">E-mail</string>
+    <string name="field_password">Password</string>
+    <string name="field_display_name">Name</string>
+    <string name="action_login">Sign in</string>
+    <string name="action_register">Create account</string>
+    <string name="action_go_register">No account yet? Register</string>
+    <string name="action_go_login">Already registered? Sign in</string>
+    <string name="or_continue_with">or continue with</string>
+    <string name="action_google">Google</string>
+    <string name="action_facebook">Facebook</string>
+    <string name="sso_simulated_suffix">(simulated)</string>
+    <string name="sso_simulated_title">Simulated %1$s sign-in</string>
+    <string name="sso_simulated_body">No client id is configured for this provider, so the sign-in is simulated: the backend accepts the e-mail below as if it came from the provider.</string>
+
+    <!-- Main screen -->
+    <string name="menu_my_events">My incidents</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_new_incident">New incident</string>
+    <string name="action_sos">SOS</string>
+    <string name="action_live">Start live video</string>
+    <string name="action_photo">Take photo</string>
+    <string name="action_add_photo">Add photo to incident</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_grant">Grant permission</string>
+    <string name="action_switch_camera">Switch camera</string>
+    <string name="action_flash">Flash on/off</string>
+    <string name="action_send">Send</string>
+    <string name="action_back">Back</string>
+    <string name="action_save">Save</string>
+    <string name="action_logout">Sign out</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_open_web">Open web page</string>
+    <string name="stop_confirm_title">Stop the stream?</string>
+    <string name="logout_confirm">Sign out?</string>
+    <string name="permission_camera_needed">Camera and microphone permission is needed to stream.</string>
+    <string name="flash_unavailable">Flash is not available on this camera</string>
+
+    <string name="stream_connecting">Connecting…</string>
+    <string name="stream_live">● LIVE</string>
+    <string name="stream_stopping">Stopping…</string>
+    <string name="stream_started">Stream has started!</string>
+    <string name="stream_stopped">Stream stopped</string>
+    <string name="stream_reconnecting">Connection lost, reconnecting (%1$d/%2$d)…</string>
+    <string name="stream_failed">Streaming failed: %1$s</string>
+    <string name="stream_no_target">The server did not return a stream target (check RTMP_URL on the backend)</string>
+    <string name="stream_encoder_error">This device cannot prepare the video/audio encoder</string>
+
+    <string name="sos_default_message">SOS! I need help. Live video and location:</string>
+    <string name="sos_no_contacts">No SOS contacts set – add phone numbers in your profile</string>
+    <string name="sos_sms_sent">SOS SMS sent to %1$d contact(s)</string>
+    <string name="sos_sms_no_app">No SMS app found</string>
+
+    <string name="photo_uploaded">Photo uploaded</string>
+    <string name="photo_no_camera_app">No camera app found</string>
+
+    <string name="comments_title">Comments (%1$d)</string>
+    <string name="comments_empty">No comments yet</string>
+    <string name="comment_hint">Write a comment…</string>
+
+    <!-- Profile -->
+    <string name="profile_providers">Sign-in methods: %1$s</string>
+    <string name="profile_sos_section">SOS settings</string>
+    <string name="field_sos_contacts">SOS phone numbers</string>
+    <string name="field_sos_contacts_hint">International format, one per line, e.g. +36301234567</string>
+    <string name="field_sos_message">SOS message</string>
+    <string name="field_sos_message_hint">The link of the live incident is added to the end</string>
+    <string name="profile_saved">Saved</string>
+
+    <!-- Events -->
+    <string name="events_empty">No incidents yet</string>
+    <string name="event_started">Started: %1$s</string>
+    <string name="event_stopped">Stopped: %1$s</string>
+    <string name="event_location">Last location: %1$.5f, %2$.5f</string>
+    <string name="event_no_location">No location</string>
+    <string name="event_photos">Photos: %1$d</string>
+    <string name="status_live">Live</string>
+    <string name="status_open">Open</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="type_sos">SOS</string>
+    <string name="type_live">Live video</string>
+    <string name="type_photo">Photo</string>
+
+    <!-- Errors -->
+    <string name="error_generic">Something went wrong</string>
+    <string name="error_network">No network connection or the server is unreachable</string>
+    <string name="error_invalid_credentials">Wrong e-mail or password</string>
+    <string name="error_too_many_attempts">Too many failed attempts, wait 15 minutes</string>
+    <string name="error_email_taken">An account with this e-mail already exists</string>
+    <string name="error_sso_rejected">The sign-in provider token was rejected</string>
+    <string name="error_sso_failed">Sign-in failed: %1$s</string>
+    <string name="error_email_required">E-mail is required</string>
+    <string name="error_email_invalid">Invalid e-mail address</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_short">At least %1$d characters</string>
+    <string name="error_name_required">Name is required</string>
+    <string name="error_phone_invalid">Invalid phone number(s): %1$s</string>
+    <string name="error_phone_too_many">At most %1$d phone numbers</string>
 </resources>
