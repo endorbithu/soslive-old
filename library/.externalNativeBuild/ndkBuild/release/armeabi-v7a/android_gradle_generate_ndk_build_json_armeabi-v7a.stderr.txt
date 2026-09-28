@@ -1,0 +1,2 @@
+process_begin: CreateProcess(NULL, "", ...) failed.
+C:/Users/admin/AppData/Local/Android/Sdk/ndk-bundle/build//../build/core/prebuilt-library.mk:45: *** Android NDK: Aborting    .  Stop.
