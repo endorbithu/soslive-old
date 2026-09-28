@@ -1,0 +1,92 @@
+# XcodeGen project definition – generate the Xcode project with:
+#   brew install xcodegen && cd ios && xcodegen generate
+name: SOSlive
+options:
+  bundleIdPrefix: info.soslive
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+packages:
+  SOSliveCore:
+    path: Packages/SOSliveCore
+  HaishinKit:
+    url: https://github.com/shogo4405/HaishinKit.swift
+    minorVersion: 1.9.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    majorVersion: 8.0.0
+  Facebook:
+    url: https://github.com/facebook/facebook-ios-sdk
+    majorVersion: 17.0.0
+
+targets:
+  SOSlive:
+    type: application
+    platform: iOS
+    sources:
+      - path: SOSlive
+    dependencies:
+      - package: SOSliveCore
+      - package: HaishinKit
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: Facebook
+        product: FacebookLogin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: info.soslive.stream
+        MARKETING_VERSION: 2.0.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: $(SOSLIVE_DEVELOPMENT_TEAM)
+        ENABLE_PREVIEWS: YES
+    info:
+      path: SOSlive/Info.plist
+      properties:
+        CFBundleDisplayName: SOSlive
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, hu]
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIApplicationSupportsIndirectInputEvents: true
+        NSCameraUsageDescription: SOSlive streams live video from your camera and takes incident photos.
+        NSMicrophoneUsageDescription: SOSlive records audio for the live stream.
+        NSLocationWhenInUseUsageDescription: Your location is attached to your incidents so helpers can find you.
+        # The mock backend is plain HTTP. Remove this for a production (HTTPS) backend.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsLocalNetworking: true
+        # App configuration (see Config/Base.xcconfig). Own key names on purpose: the Google and
+        # Facebook SDKs are configured in code only when an id is set (AppConfig.swift).
+        SOSliveAPIBaseURL: $(SOSLIVE_API_BASE_URL)
+        SOSliveGoogleClientID: $(GOOGLE_IOS_CLIENT_ID)
+        SOSliveGoogleServerClientID: $(GOOGLE_WEB_CLIENT_ID)
+        SOSliveFacebookAppID: $(FACEBOOK_APP_ID)
+        SOSliveFacebookClientToken: $(FACEBOOK_CLIENT_TOKEN)
+        FacebookAutoLogAppEventsEnabled: false
+        FacebookAutoInitEnabled: false
+        FacebookAdvertiserIDCollectionEnabled: false
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [$(GOOGLE_REVERSED_CLIENT_ID)]
+          - CFBundleURLSchemes: [fb$(FACEBOOK_APP_ID)]
+        LSApplicationQueriesSchemes: [fbapi, fb-messenger-share-api, fbauth2, fbshareextension, sms]
+
+schemes:
+  SOSlive:
+    build:
+      targets:
+        SOSlive: all
+    run:
+      config: Debug
+    archive:
+      config: Release

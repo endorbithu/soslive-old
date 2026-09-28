@@ -20,6 +20,30 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  ios:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Core package unit tests
+        run: swift test --package-path Packages/SOSliveCore
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build app (simulator, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project SOSlive.xcodeproj -scheme SOSlive \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO | tail -n 200
+
   android:
     runs-on: ubuntu-latest
     steps:

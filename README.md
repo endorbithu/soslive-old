@@ -109,6 +109,43 @@ app/src/main/java/info/soslive/stream/
 - Navigation Compose típusos route-okkal; a bejelentkezett állapot dönti el, melyik NavHost látszik
 - minSdk 26, targetSdk 35
 
+## iOS app (`ios/`)
+
+SwiftUI alkalmazás ugyanazokkal a funkciókkal és ugyanarra a backendre (mock-server).
+
+```bash
+brew install xcodegen
+cd ios
+xcodegen generate            # SOSlive.xcodeproj létrehozása a project.yml-ből
+open SOSlive.xcodeproj       # Run a szimulátoron (a mock szervert localhost:3000-en éri el)
+```
+
+Konfiguráció: `ios/Config/Secrets.xcconfig` (minta: `Secrets.example.xcconfig`), minden érték opcionális:
+backend URL (`SOSLIVE_API_BASE_URL`), Google iOS + Web kliens azonosító, Facebook app id +
+client token, fejlesztői csapat (valódi eszközre telepítéshez). Üres Google/Facebook értékek
+esetén a bejelentkezés szimulált, mint Androidon.
+
+```
+ios/
+├── project.yml                  XcodeGen projekt (iOS 16+)
+├── Config/                      xcconfig beállítások
+├── Packages/SOSliveCore/        platformfüggetlen mag: modellek, API kliens (token frissítés),
+│                                szolgáltatások, validáció, Keychain session + unit tesztek
+└── SOSlive/
+    ├── App/                     belépési pont, AppState (session), AppConfig, RootView
+    ├── Auth/                    login/regisztráció, Google/Facebook/szimulált SSO
+    ├── Stream/                  HaishinKit RTMP (StreamController), fő képernyő, hozzászólások
+    ├── Events/, Profile/        eseményeim, profil (SOS számok, üzenet)
+    ├── Services/                helyadat (CoreLocation), SMS szerkesztő, kamera
+    └── Resources/               lokalizáció (en, hu), képek
+```
+
+iOS sajátosságok: az SMS-t a rendszer nem engedi csendben elküldeni – az app kitöltött
+üzenetet nyit, amit a felhasználó küld el; a közvetítés háttérbe kerüléskor leáll; a tokenek a
+Keychainben vannak.
+
+Tesztek: `swift test --package-path ios/Packages/SOSliveCore` (macOS).
+
 ## Backend (mock-server)
 
 Node 20 + Express, JSON fájl alapú tárolás (`data/db.json`), JWT. Az API szerződés:

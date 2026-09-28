@@ -1,0 +1,93 @@
+/* Auth */
+"field.email" = "E-mail";
+"field.password" = "Jelszó";
+"field.display_name" = "Név";
+"action.login" = "Bejelentkezés";
+"action.register" = "Regisztráció";
+"action.go_register" = "Még nincs fiókod? Regisztrálj";
+"action.go_login" = "Van már fiókod? Jelentkezz be";
+"auth.or_continue_with" = "vagy folytasd ezzel";
+"sso.simulated_suffix" = "(szimulált)";
+"sso.simulated_title" = "Szimulált %@ bejelentkezés";
+"sso.simulated_body" = "Ehhez a szolgáltatóhoz nincs kliens azonosító beállítva, ezért a bejelentkezés szimulált: a backend úgy fogadja el az alábbi e-mail címet, mintha a szolgáltatótól jönne.";
+
+/* Main screen */
+"title.with_event" = "SOSlive – #%lld";
+"menu.my_events" = "Beküldött eseményeim";
+"menu.profile" = "Profil";
+"menu.new_incident" = "Új esemény";
+"action.sos" = "SOS";
+"action.sos_hint" = "Élő közvetítést indít, elküldi a helyadatot és előkészíti az SOS SMS-t";
+"action.live" = "Élő videó indítása";
+"action.photo" = "Fénykép";
+"action.add_photo" = "Fénykép hozzáadása az eseményhez";
+"action.stop" = "Leállítás";
+"action.cancel" = "Mégse";
+"action.switch_camera" = "Kameraváltás";
+"action.flash" = "Vaku ki/be";
+"action.send" = "Küldés";
+"action.save" = "Mentés";
+"action.logout" = "Kijelentkezés";
+"action.open_web" = "Megnyitás weben";
+"action.open_settings" = "Beállítások megnyitása";
+"stream.stop_confirm" = "Leállítod a streamet?";
+"logout.confirm" = "Kijelentkezel?";
+"permission.camera_needed" = "A streameléshez kamera és mikrofon hozzáférés szükséges. Engedélyezd a Beállításokban.";
+"flash.unavailable" = "Ennél a kameránál nincs vaku";
+
+"stream.connecting" = "Kapcsolódás…";
+"stream.live" = "● ÉLŐ";
+"stream.stopping" = "Leállítás…";
+"stream.started" = "Stream elindult!";
+"stream.stopped" = "Stream leállítva";
+"stream.reconnecting" = "Kapcsolat megszakadt, újrakapcsolódás (%ld/%ld)…";
+"stream.failed" = "A streamelés sikertelen: %@";
+"stream.no_target" = "A szerver nem adott stream célt (ellenőrizd a backend RTMP_URL beállítását)";
+
+"sos.default_message" = "SOS! Segítségre van szükségem. Élő videó és helyadat:";
+"sos.no_contacts" = "Nincs SOS telefonszám beállítva – add meg a profilodban";
+"sos.sms_unavailable" = "Ez az eszköz nem tud SMS-t küldeni";
+
+"photo.uploaded" = "Sikeres feltöltés!";
+
+"comments.title" = "Hozzászólások (%ld)";
+"comments.empty" = "Még nincs hozzászólás";
+"comment.hint" = "Írj hozzászólást…";
+
+/* Profile */
+"profile.providers" = "Bejelentkezési módok: %@";
+"profile.sos_section" = "SOS beállítások";
+"profile.sos_footer" = "Telefonszámok nemzetközi formátumban, soronként egy (pl. +36301234567). Az esemény linkje az üzenet végére kerül.";
+"field.sos_contacts" = "SOS telefonszámok";
+"profile.saved" = "Mentve";
+
+/* Events */
+"events.empty" = "Még nincs eseményed";
+"event.started" = "Kezdete: %@";
+"event.stopped" = "Vége: %@";
+"event.location" = "Utolsó helyadat: %.5f, %.5f";
+"event.no_location" = "Nincs helyadat";
+"event.photos" = "Fényképek: %ld";
+"status.live" = "Élő";
+"status.open" = "Nyitott";
+"status.stopped" = "Lezárt";
+"status.unknown" = "Ismeretlen";
+"type.sos" = "SOS";
+"type.live" = "Élő videó";
+"type.photo" = "Fénykép";
+
+/* Errors */
+"error.generic" = "Hiba történt";
+"error.network" = "Nincs netkapcsolat, vagy a szerver nem érhető el";
+"error.invalid_credentials" = "Hibás e-mail vagy jelszó";
+"error.too_many_attempts" = "Túl sok sikertelen próbálkozás, várj 15 percet";
+"error.email_taken" = "Ezzel az e-mail címmel már van fiók";
+"error.sso_rejected" = "A bejelentkezési szolgáltató tokenjét a szerver elutasította";
+"error.sso_failed" = "Sikertelen bejelentkezés: %@";
+"error.email_required" = "Az e-mail kötelező";
+"error.email_invalid" = "Érvénytelen e-mail cím";
+"error.password_required" = "A jelszó kötelező";
+"error.password_short" = "Legalább %ld karakter";
+"error.name_required" = "A név kötelező";
+"error.phone_invalid" = "Érvénytelen telefonszám(ok): %@";
+"error.phone_too_many" = "Legfeljebb %ld telefonszám";

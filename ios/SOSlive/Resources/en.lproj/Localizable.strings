@@ -1,0 +1,93 @@
+/* Auth */
+"field.email" = "E-mail";
+"field.password" = "Password";
+"field.display_name" = "Name";
+"action.login" = "Sign in";
+"action.register" = "Create account";
+"action.go_register" = "No account yet? Register";
+"action.go_login" = "Already registered? Sign in";
+"auth.or_continue_with" = "or continue with";
+"sso.simulated_suffix" = "(simulated)";
+"sso.simulated_title" = "Simulated %@ sign-in";
+"sso.simulated_body" = "No client id is configured for this provider, so the sign-in is simulated: the backend accepts the e-mail below as if it came from the provider.";
+
+/* Main screen */
+"title.with_event" = "SOSlive – #%lld";
+"menu.my_events" = "My incidents";
+"menu.profile" = "Profile";
+"menu.new_incident" = "New incident";
+"action.sos" = "SOS";
+"action.sos_hint" = "Starts a live stream, reports your location and prepares the SOS text message";
+"action.live" = "Start live video";
+"action.photo" = "Take photo";
+"action.add_photo" = "Add photo to incident";
+"action.stop" = "Stop";
+"action.cancel" = "Cancel";
+"action.switch_camera" = "Switch camera";
+"action.flash" = "Flash on/off";
+"action.send" = "Send";
+"action.save" = "Save";
+"action.logout" = "Sign out";
+"action.open_web" = "Open web page";
+"action.open_settings" = "Open Settings";
+"stream.stop_confirm" = "Stop the stream?";
+"logout.confirm" = "Sign out?";
+"permission.camera_needed" = "Camera and microphone access is needed to stream. Allow it in Settings.";
+"flash.unavailable" = "Flash is not available on this camera";
+
+"stream.connecting" = "Connecting…";
+"stream.live" = "● LIVE";
+"stream.stopping" = "Stopping…";
+"stream.started" = "Stream has started!";
+"stream.stopped" = "Stream stopped";
+"stream.reconnecting" = "Connection lost, reconnecting (%ld/%ld)…";
+"stream.failed" = "Streaming failed: %@";
+"stream.no_target" = "The server did not return a stream target (check RTMP_URL on the backend)";
+
+"sos.default_message" = "SOS! I need help. Live video and location:";
+"sos.no_contacts" = "No SOS contacts set – add phone numbers in your profile";
+"sos.sms_unavailable" = "This device cannot send text messages";
+
+"photo.uploaded" = "Photo uploaded";
+
+"comments.title" = "Comments (%ld)";
+"comments.empty" = "No comments yet";
+"comment.hint" = "Write a comment…";
+
+/* Profile */
+"profile.providers" = "Sign-in methods: %@";
+"profile.sos_section" = "SOS settings";
+"profile.sos_footer" = "Phone numbers in international format, one per line (e.g. +36301234567). The incident link is added to the end of the message.";
+"field.sos_contacts" = "SOS phone numbers";
+"profile.saved" = "Saved";
+
+/* Events */
+"events.empty" = "No incidents yet";
+"event.started" = "Started: %@";
+"event.stopped" = "Stopped: %@";
+"event.location" = "Last location: %.5f, %.5f";
+"event.no_location" = "No location";
+"event.photos" = "Photos: %ld";
+"status.live" = "Live";
+"status.open" = "Open";
+"status.stopped" = "Stopped";
+"status.unknown" = "Unknown";
+"type.sos" = "SOS";
+"type.live" = "Live video";
+"type.photo" = "Photo";
+
+/* Errors */
+"error.generic" = "Something went wrong";
+"error.network" = "No network connection or the server is unreachable";
+"error.invalid_credentials" = "Wrong e-mail or password";
+"error.too_many_attempts" = "Too many failed attempts, wait 15 minutes";
+"error.email_taken" = "An account with this e-mail already exists";
+"error.sso_rejected" = "The sign-in provider token was rejected";
+"error.sso_failed" = "Sign-in failed: %@";
+"error.email_required" = "E-mail is required";
+"error.email_invalid" = "Invalid e-mail address";
+"error.password_required" = "Password is required";
+"error.password_short" = "At least %ld characters";
+"error.name_required" = "Name is required";
+"error.phone_invalid" = "Invalid phone number(s): %@";
+"error.phone_too_many" = "At most %ld phone numbers";
