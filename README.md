@@ -8,6 +8,15 @@ eseményeket és a beállításokat JSON fájlokba, a videót a stream szerverre
 A műszaki szerződés: „SOSlive mobil app – átállási útmutató” és a
 `docs/EVENT_FORMAT.md` (endorbithu/soslive-webapp).
 
+## Repó szerkezet
+
+| Mappa | Tartalom |
+|---|---|
+| `android/` | Új Android app (Kotlin, Jetpack Compose) – önálló Gradle projekt |
+| `ios/` | Új iOS app (SwiftUI) – XcodeGen projekt + `SOSliveCore` Swift csomag |
+| `legacy/` | A régi (2017–2019-es) Java Android app változatlanul, csak referenciának |
+| `docker-compose.yml` | Helyi RTMP/HLS szerver (MediaMTX) a stream kipróbálásához |
+
 ## Hogyan működik
 
 ```
@@ -52,7 +61,7 @@ A mobil appok **ugyanabban a Google Cloud projektben** kapnak OAuth klienst, min
 
 ## Konfiguráció
 
-**Android – `local.properties`** (vagy `-P` gradle property):
+**Android – `android/local.properties`** (vagy `-P` gradle property):
 
 ```properties
 soslive.webappUrl=https://soslive.example.com
@@ -72,7 +81,7 @@ Helyi stream szerver teszteléshez: `docker compose up` (MediaMTX, RTMP :1935, H
 
 ```bash
 # Android
-./gradlew testDebugUnitTest lintDebug assembleDebug
+cd android && ./gradlew testDebugUnitTest lintDebug assembleDebug
 
 # iOS
 cd ios && swift test --package-path Packages/SOSliveCore
@@ -84,7 +93,7 @@ A CI (`.github/workflows/ci.yml`) mindkét platformot buildeli és teszteli.
 ### Felépítés
 
 ```
-app/src/main/java/info/soslive/stream/
+android/app/src/main/java/info/soslive/stream/
 ├── auth/        Google belépés + drive.file (Credential Manager, AuthorizationClient), fiók tár
 ├── drive/       Drive REST kliens, szimulált Drive, SosliveDrive (mappa/config/esemény/rotáció),
 │                EventWriter, fájlformátumok

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    tools:context="net.ossrs.yasea.soslivestream.LoginregiActivity">
+
+
+<FrameLayout
+        android:id="@+id/loginBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#aaa"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true">
+
+
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/loginLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:layout_marginTop="100dp"
+        android:textAlignment="center"
+        android:inputType="textPersonName"
+        android:textSize="25dp"
+        android:layout_centerHorizontal="true"
+        android:text="Login"
+        />
+    <EditText
+        android:id="@+id/loginUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="33dp"
+        android:layout_marginTop="10dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text=""
+        android:padding="2dp"
+        android:layout_below="@+id/loginLabel"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/login_iput"
+        android:layout="@+id/loginPassword"
+        />
+
+    <EditText
+        android:id="@+id/loginPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="33dp"
+        android:padding="2dp"
+        android:layout_marginTop="10dp"
+        android:ems="10"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/loginUsername"
+        android:inputType="textPassword"
+        android:background="@drawable/login_iput"
+ />
+
+    <Button
+        android:id="@+id/loginOk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ok"
+        android:layout_below="@+id/loginPassword"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp" />
+
+
+
+</RelativeLayout>
