@@ -1,21 +1,21 @@
-// SOSlive iOS configuration.
-// Every value is optional. Override them in Config/Secrets.xcconfig (git-ignored):
+// SOSlive iOS configuration. There is no SOSlive backend: incidents go to the user's own
+// Google Drive, video to the stream server.
+// Override values in Config/Secrets.xcconfig (git-ignored):
 //   cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
-// The RTMP target itself comes from the backend (mock-server/.env -> RTMP_URL).
+// xcconfig treats "//" as a comment, hence the "$()" in URLs.
 
-// Backend base URL. xcconfig treats "//" as a comment, hence the "$()" trick.
-// The iOS simulator reaches the Mac's mock server on localhost.
-SOSLIVE_API_BASE_URL = http:/$()/localhost:3000/
+// Web app that shows the events: links are <webapp>/e/{fileId}
+SOSLIVE_WEBAPP_URL = https:/$()/soslive.example
 
-// Google Sign-In: iOS OAuth client id + its reversed form (URL scheme), and the *Web*
-// client id (the ID token audience the backend verifies). Empty = simulated Google login.
+// RTMP ingest (a random stream key is appended per event) and HLS playback template.
+// Defaults: MediaMTX from docker-compose.yml, reachable from the iOS simulator on localhost.
+SOSLIVE_STREAM_RTMP_URL = rtmp:/$()/localhost:1935/live
+SOSLIVE_STREAM_HLS_TEMPLATE = http:/$()/localhost:8888/live/{key}/index.m3u8
+
+// Google Sign-In: the iOS OAuth client of the SAME Google Cloud project as the web app,
+// and its reversed form (URL scheme). Empty = simulated Drive (files stay on the device).
 GOOGLE_IOS_CLIENT_ID =
 GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.notconfigured
-GOOGLE_WEB_CLIENT_ID =
-
-// Facebook Login. Empty = simulated Facebook login.
-FACEBOOK_APP_ID =
-FACEBOOK_CLIENT_TOKEN =
 
 // Apple developer team for signing on a real device.
 SOSLIVE_DEVELOPMENT_TEAM =

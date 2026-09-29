@@ -3,20 +3,20 @@ import SwiftUI
 
 enum Route: Hashable {
     case events
-    case eventDetail(Int64)
-    case profile
+    case eventDetail(fileId: String, title: String)
+    case settings
 }
 
-/// The session decides what is shown: login flow or the main screens.
+/// The stored account decides what is shown: Google sign-in or the main screens.
 struct RootView: View {
     @EnvironmentObject private var app: AppState
 
     var body: some View {
-        if let user = app.user {
+        if let account = app.account {
             // Keyed by user: another account gets fresh view models and navigation state.
-            MainView(app: app).id(user.id)
+            MainView(app: app).id(account.email)
         } else {
-            AuthFlowView(auth: app.auth)
+            SignInView()
         }
     }
 }
@@ -36,9 +36,9 @@ struct MainView: View {
             StreamView(model: streamModel, path: $path)
                 .navigationDestination(for: Route.self) { route in
                     switch route {
-                    case .events: EventsView(events: app.events)
-                    case .eventDetail(let id): EventDetailView(id: id, events: app.events)
-                    case .profile: ProfileView(app: app)
+                    case .events: EventsView(drive: app.drive)
+                    case let .eventDetail(fileId, title): EventDetailView(fileId: fileId, title: title, drive: app.drive)
+                    case .settings: SettingsView(app: app)
                     }
                 }
         }

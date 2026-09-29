@@ -8,16 +8,14 @@ enum L10n {
         return args.isEmpty ? format : String(format: format, locale: Locale.current, arguments: args)
     }
 
-    /// User facing text for a failure: known backend error codes are localized.
+    /// User facing text for a failure.
     static func error(_ error: Error) -> String {
-        guard let apiError = error as? APIError else { return tr("error.generic") }
-        switch apiError.code {
-        case APIError.networkCode: return tr("error.network")
-        case "invalid_credentials": return tr("error.invalid_credentials")
-        case "too_many_attempts": return tr("error.too_many_attempts")
-        case "email_taken": return tr("error.email_taken")
-        case "invalid_sso_token": return tr("error.sso_rejected")
-        default: return apiError.message
+        switch error as? DriveError {
+        case .consentRequired?: return tr("error.drive_permission")
+        case .notFound?: return tr("error.drive_missing")
+        case .network?: return tr("error.network")
+        case let .http(status, message)?: return tr("error.drive", "\(status) \(message)")
+        case .parse?, nil: return tr("error.generic")
         }
     }
 }

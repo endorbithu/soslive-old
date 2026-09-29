@@ -1,37 +1,34 @@
-/* Auth */
+/* Sign in */
+"drive.explain_title" = "Your data stays on your Google Drive";
+"drive.explain_body" = "SOSlive saves your incidents (location, photos, stream link, your messages) and your settings as files in a \"SOSlive\" folder on your own Google Drive. The app can only access files it created. Without this permission it cannot record incidents.";
+"drive.denied" = "Google Drive access was not granted. SOSlive cannot record incidents without it.";
+"action.sign_in_google" = "Sign in with Google";
+"action.allow_drive" = "Allow Google Drive access";
+"action.sign_in_simulated" = "Sign in (simulated Drive)";
+"simulated.hint" = "Development mode: no Google client id is configured, files are stored only on this device and links cannot be opened by others.";
 "field.email" = "E-mail";
-"field.password" = "Password";
 "field.display_name" = "Name";
-"action.login" = "Sign in";
-"action.register" = "Create account";
-"action.go_register" = "No account yet? Register";
-"action.go_login" = "Already registered? Sign in";
-"auth.or_continue_with" = "or continue with";
-"sso.simulated_suffix" = "(simulated)";
-"sso.simulated_title" = "Simulated %@ sign-in";
-"sso.simulated_body" = "No client id is configured for this provider, so the sign-in is simulated: the backend accepts the e-mail below as if it came from the provider.";
+"action.continue" = "Continue";
+"action.cancel" = "Cancel";
+"error.sign_in" = "Sign-in failed: %@";
 
 /* Main screen */
-"title.with_event" = "SOSlive – #%lld";
 "menu.my_events" = "My incidents";
-"menu.profile" = "Profile";
+"menu.settings" = "Settings";
 "menu.new_incident" = "New incident";
 "action.sos" = "SOS";
-"action.sos_hint" = "Starts a live stream, reports your location and prepares the SOS text message";
+"action.sos_hint" = "Starts a live stream, records your location and prepares the message to your contacts";
 "action.live" = "Start live video";
 "action.photo" = "Take photo";
 "action.add_photo" = "Add photo to incident";
 "action.stop" = "Stop";
-"action.cancel" = "Cancel";
 "action.switch_camera" = "Switch camera";
 "action.flash" = "Flash on/off";
 "action.send" = "Send";
-"action.save" = "Save";
-"action.logout" = "Sign out";
+"action.share_link" = "Share link";
 "action.open_web" = "Open web page";
 "action.open_settings" = "Open Settings";
 "stream.stop_confirm" = "Stop the stream?";
-"logout.confirm" = "Sign out?";
 "permission.camera_needed" = "Camera and microphone access is needed to stream. Allow it in Settings.";
 "flash.unavailable" = "Flash is not available on this camera";
 
@@ -42,52 +39,48 @@
 "stream.stopped" = "Stream stopped";
 "stream.reconnecting" = "Connection lost, reconnecting (%ld/%ld)…";
 "stream.failed" = "Streaming failed: %@";
-"stream.no_target" = "The server did not return a stream target (check RTMP_URL on the backend)";
 
-"sos.default_message" = "SOS! I need help. Live video and location:";
-"sos.no_contacts" = "No SOS contacts set – add phone numbers in your profile";
-"sos.sms_unavailable" = "This device cannot send text messages";
+"share.failed" = "The incident link could not be made public (%@) – others will not be able to open it.";
+"notify.no_contacts" = "No contacts to notify – add phone numbers or e-mails in Settings";
+"notify.text" = "SOS! I need help. Live video and location: %@ (You can reply by SMS to this number.)";
+"notify.subject" = "SOSlive – I need help";
+"notify.sms_unavailable" = "This device cannot send text messages";
+"notify.mute_tip" = "Tip: mute your phone – an incoming reply could give you away.";
 
-"photo.uploaded" = "Photo uploaded";
+"photo.uploaded" = "Photo added to the incident";
 
-"comments.title" = "Comments (%ld)";
-"comments.empty" = "No comments yet";
-"comment.hint" = "Write a comment…";
-
-/* Profile */
-"profile.providers" = "Sign-in methods: %@";
-"profile.sos_section" = "SOS settings";
-"profile.sos_footer" = "Phone numbers in international format, one per line (e.g. +36301234567). The incident link is added to the end of the message.";
-"field.sos_contacts" = "SOS phone numbers";
-"profile.saved" = "Saved";
+"messages.title" = "My messages (%ld)";
+"message.hint" = "Write a message for the incident page…";
+"entries.empty" = "Nothing yet";
+"entry.position" = "%@ – position %.5f, %.5f";
+"entry.image" = "%@ – photo";
 
 /* Events */
 "events.empty" = "No incidents yet";
-"event.started" = "Started: %@";
-"event.stopped" = "Stopped: %@";
-"event.location" = "Last location: %.5f, %.5f";
-"event.no_location" = "No location";
-"event.photos" = "Photos: %ld";
-"status.live" = "Live";
-"status.open" = "Open";
-"status.stopped" = "Stopped";
-"status.unknown" = "Unknown";
-"type.sos" = "SOS";
-"type.live" = "Live video";
-"type.photo" = "Photo";
+"events.utc_hint" = "Start time (UTC)";
+"event.stream" = "Stream: %@";
+"event.no_stream" = "No stream";
+
+/* Settings */
+"settings.notify_section" = "Who gets the link";
+"settings.notify_footer" = "Phone numbers in international format (e.g. +36 30 123 4567) and e-mail addresses, one per line.";
+"field.notification_phones" = "Phone numbers (SMS)";
+"field.notification_emails" = "E-mail addresses";
+"field.max_events" = "Incidents to keep";
+"field.max_events_hint" = "Older incidents are moved to the Drive trash (restorable for 30 days).";
+"settings.web_note" = "These settings are stored in config.json on your Drive; the web page only shows them.";
+"action.save" = "Save";
+"settings.saved" = "Saved to Google Drive";
+"action.logout" = "Sign out";
+"logout.confirm" = "Sign out?";
+"logout.note" = "Your incidents and settings stay on your Google Drive.";
+"error.emails_invalid" = "Invalid e-mail address(es): %@";
+"error.phones_invalid" = "Invalid phone number(s): %@";
+"error.max_events" = "Enter a number of at least 1";
 
 /* Errors */
 "error.generic" = "Something went wrong";
-"error.network" = "No network connection or the server is unreachable";
-"error.invalid_credentials" = "Wrong e-mail or password";
-"error.too_many_attempts" = "Too many failed attempts, wait 15 minutes";
-"error.email_taken" = "An account with this e-mail already exists";
-"error.sso_rejected" = "The sign-in provider token was rejected";
-"error.sso_failed" = "Sign-in failed: %@";
-"error.email_required" = "E-mail is required";
-"error.email_invalid" = "Invalid e-mail address";
-"error.password_required" = "Password is required";
-"error.password_short" = "At least %ld characters";
-"error.name_required" = "Name is required";
-"error.phone_invalid" = "Invalid phone number(s): %@";
-"error.phone_too_many" = "At most %ld phone numbers";
+"error.network" = "No network connection";
+"error.drive" = "Google Drive error: %@";
+"error.drive_missing" = "The incident file was deleted from Drive – writing stopped.";
+"error.drive_permission" = "Google Drive access is needed – sign out and sign in again to allow it.";

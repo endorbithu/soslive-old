@@ -1,30 +1,24 @@
 import Foundation
 
-/// Build configuration (Config/Base.xcconfig -> Info.plist).
+/// Build configuration (Config/Base.xcconfig -> Info.plist). There is no SOSlive backend.
 enum AppConfig {
     private static func value(_ key: String) -> String {
         ((Bundle.main.object(forInfoDictionaryKey: key) as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    static let apiBaseURL: URL = {
-        var raw = value("SOSliveAPIBaseURL")
-        if raw.isEmpty { raw = "http://localhost:3000/" }
-        if !raw.hasSuffix("/") { raw += "/" }
-        return URL(string: raw) ?? URL(string: "http://localhost:3000/")!
-    }()
-
+    static let webappURL = value("SOSliveWebappURL").isEmpty ? "https://soslive.example" : value("SOSliveWebappURL")
+    static let streamRTMPURL = value("SOSliveStreamRTMPURL").isEmpty ? "rtmp://localhost:1935/live" : value("SOSliveStreamRTMPURL")
+    static let streamHLSTemplate = value("SOSliveStreamHLSTemplate").isEmpty
+        ? "http://localhost:8888/live/{key}/index.m3u8" : value("SOSliveStreamHLSTemplate")
     static let googleClientID = value("SOSliveGoogleClientID")
-    static let googleServerClientID = value("SOSliveGoogleServerClientID")
-    static let facebookAppID = value("SOSliveFacebookAppID")
-    static let facebookClientToken = value("SOSliveFacebookClientToken")
 
-    /// Without an iOS client id, Google sign-in is simulated (mock token to the backend).
+    /// Without an iOS client id the app keeps its "Drive" files locally (development only).
     static var googleConfigured: Bool { !googleClientID.isEmpty }
-    /// Without app id + client token, Facebook sign-in is simulated.
-    static var facebookConfigured: Bool { !facebookAppID.isEmpty && !facebookClientToken.isEmpty }
 
-    static let commentPollInterval: UInt64 = 10_000_000_000
-    static let locationSendInterval: TimeInterval = 30
+    static let driveFileScope = "https://www.googleapis.com/auth/drive.file"
+
+    /// A photo incident stays open this long for extra photos / messages (legacy: 2 hours).
+    static let activeEventWindow: TimeInterval = 2 * 60 * 60
     static let streamMaxRetries = 3
     static let streamRetryDelay: UInt64 = 3_000_000_000
 }

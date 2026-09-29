@@ -19,7 +19,7 @@ struct StreamView: View {
             VStack(spacing: 8) {
                 LiveBadge(phase: model.phase)
                 if model.activeEvent != nil {
-                    CommentsPanel(model: model)
+                    MessagesPanel(model: model)
                 }
                 Spacer()
                 controls
@@ -43,8 +43,8 @@ struct StreamView: View {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button { path.append(.events) } label: { Image(systemName: "list.bullet") }
                     .accessibilityLabel(Text("menu.my_events"))
-                Button { path.append(.profile) } label: { Image(systemName: "person.crop.circle") }
-                    .accessibilityLabel(Text("menu.profile"))
+                Button { path.append(.settings) } label: { Image(systemName: "gearshape") }
+                    .accessibilityLabel(Text("menu.settings"))
                 Menu {
                     Button("menu.new_incident", action: model.newIncident)
                         .disabled(model.phase != .idle || model.activeEvent == nil)
@@ -59,19 +59,22 @@ struct StreamView: View {
         .confirmationDialog("stream.stop_confirm", isPresented: $confirmStop, titleVisibility: .visible) {
             Button("action.stop", role: .destructive, action: model.stopLive)
         }
-        .sheet(item: $model.smsRequest) { request in
-            MessageComposer(recipients: request.recipients, body: request.body) { model.smsRequest = nil }
-                .ignoresSafeArea()
+        .sheet(item: $model.composer) { composer in
+            switch composer {
+            case let .sms(recipients, body):
+                MessageComposer(recipients: recipients, body: body) { model.composerFinished() }.ignoresSafeArea()
+            case let .mail(recipients, subject, body):
+                MailComposer(recipients: recipients, subject: subject, body: body) { model.composerFinished() }.ignoresSafeArea()
+            }
         }
         .fullScreenCover(item: $model.photoRequest) { request in
-            CameraPicker { image in model.photoFinished(eventId: request.eventId, image: image) }
+            CameraPicker { image in model.photoFinished(eventFileId: request.eventFileId, image: image) }
                 .ignoresSafeArea()
         }
     }
 
     private var title: String {
-        if let id = model.liveEventId ?? model.activeEvent?.id { return L10n.tr("title.with_event", id) }
-        return "SOSlive"
+        model.activeEvent?.title ?? "SOSlive"
     }
 
     @ViewBuilder
@@ -175,34 +178,35 @@ private struct PermissionMissingView: View {
     }
 }
 
-struct CommentsPanel: View {
+/// Open incident: share its link and add the owner's own messages to the event page.
+struct MessagesPanel: View {
     @ObservedObject var model: StreamViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { model.commentsExpanded.toggle() } label: {
-                HStack {
-                    Text(L10n.tr("comments.title", model.comments.count)).font(.subheadline.bold())
-                    Spacer()
-                    if model.unreadComments > 0 {
-                        Text("\(model.unreadComments)")
-                            .font(.caption.bold()).foregroundStyle(.white)
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Color.sosRed, in: Capsule())
+            HStack {
+                Button { model.messagesExpanded.toggle() } label: {
+                    HStack {
+                        Text(L10n.tr("messages.title", model.messages.count)).font(.subheadline.bold())
+                        Spacer()
+                        Image(systemName: model.messagesExpanded ? "chevron.up" : "chevron.down")
                     }
-                    Image(systemName: model.commentsExpanded ? "chevron.up" : "chevron.down")
+                }
+                .buttonStyle(.plain)
+                if let link = model.activeEvent?.link, let url = URL(string: link) {
+                    ShareLink(item: url) { Image(systemName: "square.and.arrow.up") }
+                        .accessibilityLabel(Text("action.share_link"))
                 }
             }
-            .buttonStyle(.plain)
 
-            if model.commentsExpanded {
-                CommentList(comments: model.comments).frame(maxHeight: 220)
+            if model.messagesExpanded {
+                EntryList(entries: model.messages).frame(maxHeight: 200)
                 HStack {
-                    TextField("comment.hint", text: $model.commentDraft, axis: .vertical)
+                    TextField("message.hint", text: $model.messageDraft, axis: .vertical)
                         .lineLimit(1...3)
                         .textFieldStyle(.roundedBorder)
-                    Button { model.sendComment() } label: { Image(systemName: "paperplane.fill") }
-                        .disabled(model.commentDraft.trimmingCharacters(in: .whitespaces).isEmpty || model.sendingComment)
+                    Button { model.sendMessage() } label: { Image(systemName: "paperplane.fill") }
+                        .disabled(model.messageDraft.trimmingCharacters(in: .whitespaces).isEmpty || model.sendingMessage)
                         .accessibilityLabel(Text("action.send"))
                 }
             }
@@ -212,34 +216,50 @@ struct CommentsPanel: View {
     }
 }
 
-struct CommentList: View {
-    let comments: [Comment]
+/// Entries of an event file (position / message / image; unknown types are skipped, like on the web).
+struct EntryList: View {
+    let entries: [EventEntry]
+
+    private var known: [(offset: Int, element: EventEntry)] {
+        Array(entries.enumerated()).filter { ["pos", "msg", "img"].contains($0.element.type ?? "") }
+    }
 
     var body: some View {
-        if comments.isEmpty {
-            Text("comments.empty").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+        if known.isEmpty {
+            Text("entries.empty").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(comments) { comment in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(comment.authorName) · \(comment.createdAt.shortDateTime)")
-                                    .font(.caption2)
-                                    .fontWeight(comment.fromOwner ? .regular : .bold)
-                                Text(comment.message).font(.callout)
-                            }
-                            .id(comment.id)
+                        ForEach(known, id: \.offset) { item in
+                            row(item.element).id(item.offset)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onAppear { scrollToLast(proxy) }
-                .onChange(of: comments.count) { _ in scrollToLast(proxy) }
+                .onChange(of: entries.count) { _ in scrollToLast(proxy) }
             }
         }
     }
 
     private func scrollToLast(_ proxy: ScrollViewProxy) {
-        if let id = comments.last?.id { proxy.scrollTo(id, anchor: .bottom) }
+        if let last = known.last?.offset { proxy.scrollTo(last, anchor: .bottom) }
+    }
+
+    @ViewBuilder
+    private func row(_ entry: EventEntry) -> some View {
+        let time = entry.time.flatMap(parseISO)?.shortDateTime ?? ""
+        switch entry.type ?? "" {
+        case "msg":
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(entry.string("name") ?? "") · \(time)").font(.caption2)
+                Text(entry.string("text") ?? "").font(.callout)
+            }
+        case "pos":
+            Text(L10n.tr("entry.position", time, entry.double("lat") ?? 0, entry.double("lng") ?? 0)).font(.caption)
+        default:
+            Text(L10n.tr("entry.image", time)).font(.caption)
+        }
     }
 }

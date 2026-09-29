@@ -32,6 +32,38 @@ struct MessageComposer: UIViewControllerRepresentable {
     }
 }
 
+/// Pre-filled e-mail composer; the user taps Send.
+struct MailComposer: UIViewControllerRepresentable {
+    let recipients: [String]
+    let subject: String
+    let body: String
+    let onFinish: () -> Void
+
+    static var canSend: Bool { MFMailComposeViewController.canSendMail() }
+
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let controller = MFMailComposeViewController()
+        controller.setToRecipients(recipients)
+        controller.setSubject(subject)
+        controller.setMessageBody(body, isHTML: false)
+        controller.mailComposeDelegate = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let onFinish: () -> Void
+        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            onFinish()
+        }
+    }
+}
+
 /// System camera (photo library on the simulator, which has no camera).
 struct CameraPicker: UIViewControllerRepresentable {
     let onFinish: (UIImage?) -> Void

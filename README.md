@@ -1,177 +1,112 @@
 # SOSlive
 
-Android alkalmazás vészhelyzeti élő videó közvetítéshez (RTMP), helyadat-küldéssel, SOS SMS-sel,
-fotó-bejelentéssel és hozzászólásokkal – felhasználókezeléssel (e-mail + jelszó, Google és
-Facebook SSO). A backendet egyelőre egy **szimulált (mock) szerver** adja, amit később egy
-valódi backend vált le ugyanazzal az API szerződéssel (`mock-server/openapi.yaml`).
+Android és iOS alkalmazás vészhelyzeti élő videó közvetítéshez (RTMP), helyadattal, fotóval és
+értesítéssel. **Nincs SOSlive backend:** az app a user saját **Google Drive**-jára írja az
+eseményeket és a beállításokat JSON fájlokba, a videót a stream szerverre küldi; a web
+(`https://<webapp>`) a Drive fájlokat csak olvassa.
 
-> A korábbi (2017–2019-es) Java + yasea alapú verziót ez a kód teljesen leváltja.
+A műszaki szerződés: „SOSlive mobil app – átállási útmutató” és a
+`docs/EVENT_FORMAT.md` (endorbithu/soslive-webapp).
 
-## Gyors indítás
+## Hogyan működik
 
-Az egyetlen kötelező beállítás az RTMP szerver címe.
-
-```bash
-# 1) Mock backend
-cd mock-server
-cp .env.example .env          # állítsd be: RTMP_URL=rtmp://<szerver>:1935/live
-npm install
-npm start                     # http://localhost:3000  (demo: demo@soslive.local / demo1234)
-
-# 2) Android app (emulátorból a gép 10.0.2.2:3000 címen éri el a mock szervert)
-./gradlew installDebug
+```
+mobil app ──(Google token, drive.file)──► user Google Drive-ja
+   │                                         SOSlive/            (privát mappa)
+   │                                           config.json       (privát, csak az app írja)
+   │                                           2026-09-29 14:03:22.json  (esemény, "anyone with link")
+   │                                           img ….jpg          (fotó, "anyone with link")
+   └──(RTMP)──► stream szerver ──(HLS)──► néző böngészője  ◄── web: https://<webapp>/e/{fileId}
 ```
 
-Docker-rel ugyanez, opcionálisan helyi RTMP szerverrel (MediaMTX) is:
+- **Belépés:** csak Google (`openid email profile drive.file`); a token a telefonon marad.
+- **SOSlive mappa:** belépéskor megkeresi (`appProperties {"soslive":"root"}`), ha nincs,
+  létrehozza; több találatnál a legrégebbi az érvényes.
+- **config.json:** értesítendő e-mailek / telefonszámok, `max_events`; csak az app írja,
+  ismeretlen mezőket megőriz. Első belépéskor a régi Java app SMS-számai átkerülnek bele.
+- **Esemény:** fájlnév a kezdés ideje UTC-ben, tartalom `{"v":1,"stream":"…","entries":[…]}`
+  (`pos` / `msg` / `img`). Létrehozás után „anyone with the link” megosztás, a link
+  `https://<webapp>/e/{fileId}`. Az app mindig a teljes fájlt tölti fel (összevonva,
+  újrapróbálással; 404 esetén leáll), pozíció legfeljebb 30 mp-enként.
+- **Rotáció:** új esemény után a `max_events`-nél régebbiek a Drive kukájába kerülnek.
+- **Értesítés:** SOS-kor a link SMS-ben (Androidon `SEND_SMS` engedéllyel automatikusan,
+  különben kitöltött SMS) és e-mailben (kitöltött levél) megy a `config.json` címzettjeinek.
+  A válasz natív SMS-ként jön; az app nem olvas SMS-t. Az esemény fájlba nem kerül
+  telefonszám vagy e-mail cím.
+- **Stream:** cserélhető `StreamProvider`; most konfigurációs sablon: eseményenként véletlen
+  kulcs, publikálás `<RTMP_URL>/<kulcs>`, a `stream` mezőbe a HLS sablon kerül. Hosztolt
+  szolgáltató (Mux, Cloudflare…) később köthető be – annak API kulcsa szerverre való, nem az appba.
+- **Szimulált Drive:** ha nincs Google kliens azonosító beállítva, a fájlok csak a
+  telefonon tárolódnak (fejlesztéshez; a linkeket más nem nyithatja meg).
 
-```bash
-cp mock-server/.env.example mock-server/.env   # RTMP_URL=rtmp://<géped LAN IP-je>:1935/live
-docker compose --profile rtmp up --build
-# a stream nézése: ffplay rtmp://localhost:1935/live/<streamKey>
-#                  vagy HLS: http://localhost:8888/live/<streamKey>
-```
+## Google Cloud beállítás
 
-A stream kulcsot a backend adja eseményenként (`{yyyymmdd}_{userId}_{eventId}_{hash}`), vagy
-egy fix kulcsot használ, ha `RTMP_STREAM_KEY` meg van adva (pl. YouTube / Facebook Live).
+A mobil appok **ugyanabban a Google Cloud projektben** kapnak OAuth klienst, mint a web
+(`drive.file` projektenként érvényes – csak így látja a web a mobil fájljait):
 
-### Konfiguráció
+- **Android** OAuth kliens: package `info.soslive.stream` + az aláíró kulcs SHA-1-e
+  (debug és release kulcshoz is), valamint a projekt **Web** kliens azonosítója az appban.
+- **iOS** OAuth kliens: bundle ID `info.soslive.stream`.
+- Scope-ok: `openid`, `email`, `profile`, `https://www.googleapis.com/auth/drive.file`.
+- OAuth consent screen: élesben „In production” (Testing módban 7 nap után lejárnak a tokenek).
 
-**Backend – `mock-server/.env`** (részletek: `mock-server/.env.example`)
+## Konfiguráció
 
-| Kulcs | Kötelező | Leírás |
-|---|---|---|
-| `RTMP_URL` | **igen** | RTMP ingest, pl. `rtmp://host:1935/live` – az app ide publikál: `<RTMP_URL>/<streamKey>` |
-| `RTMP_STREAM_KEY` | nem | Fix stream kulcs minden eseményhez |
-| `PUBLIC_WEB_URL` | nem | A szerver külső címe – ez kerül az SOS SMS linkjébe |
-| `JWT_SECRET` | nem | Állítsd be, hogy újraindítás után is érvényesek maradjanak a bejelentkezések |
-| `GOOGLE_CLIENT_ID` | nem | Ha meg van adva, a Google ID tokeneket valóban ellenőrzi |
-| `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` | nem | Ha meg van adva, a Facebook tokeneket valóban ellenőrzi |
-
-**App – `local.properties`** (vagy `-P` gradle property), minden érték opcionális:
+**Android – `local.properties`** (vagy `-P` gradle property):
 
 ```properties
-# Mock/valódi backend címe. Alapértelmezés: http://10.0.2.2:3000/ (emulátor -> fejlesztő gép)
-# Valódi telefonon: a gép LAN IP-je, pl. http://192.168.1.10:3000/
-soslive.apiBaseUrl=http://10.0.2.2:3000/
-
-# Valódi Google bejelentkezés: a Google Cloud Console *Web* OAuth kliens azonosítója
-# (ugyanez menjen a backend GOOGLE_CLIENT_ID-jébe). Üresen: szimulált Google login.
-soslive.googleWebClientId=
-
-# Valódi Facebook bejelentkezés. Üresen: szimulált Facebook login.
-soslive.facebookAppId=
-soslive.facebookClientToken=
+soslive.webappUrl=https://soslive.example.com
+soslive.streamRtmpUrl=rtmp://stream.example.com:1935/live
+soslive.streamHlsTemplate=https://stream.example.com/live/{key}/index.m3u8
+# Web OAuth kliens azonosító (ugyanaz a projekt). Üresen: szimulált Drive.
+soslive.googleWebClientId=1234-web.apps.googleusercontent.com
 ```
 
-### Szimulált SSO
+**iOS – `ios/Config/Secrets.xcconfig`** (minta: `Secrets.example.xcconfig`):
+`SOSLIVE_WEBAPP_URL`, `SOSLIVE_STREAM_RTMP_URL`, `SOSLIVE_STREAM_HLS_TEMPLATE`,
+`GOOGLE_IOS_CLIENT_ID`, `GOOGLE_REVERSED_CLIENT_ID`, `SOSLIVE_DEVELOPMENT_TEAM`.
 
-Ha egy szolgáltatóhoz nincs kliens azonosító, a „Google (szimulált)” / „Facebook (szimulált)”
-gomb egy párbeszédablakot nyit, ahol e-mail címet és nevet lehet megadni. Az app ilyenkor
-`mock:<email>|<név>` tokent küld, amit a mock backend elfogad, mintha a szolgáltatótól jött
-volna. Azonos e-mail címmel a különböző bejelentkezési módok ugyanahhoz a fiókhoz kapcsolódnak.
-
-## Funkciók
-
-- **Felhasználókezelés**: regisztráció, bejelentkezés, Google (Credential Manager) és Facebook
-  login, JWT access token + rotálódó refresh token (401 esetén automatikus frissítés), kijelentkezés.
-- **SOS**: egy gombnyomás → esemény létrehozása helyadattal → RTMP élő közvetítés → SMS az SOS
-  telefonszámokra az esemény linkjével (SEND_SMS engedély nélkül az SMS app nyílik meg kitöltve).
-- **Élő videó** (nem SOS) ugyanígy, SMS nélkül; automatikus újrakapcsolódás (3×).
-- **Fotó bejelentés**: a rendszer kamera appjával, feltöltés az eseményhez; 2 órán belül a további
-  fotók és hozzászólások ugyanahhoz az eseményhez kerülnek („Új esemény” menüvel zárható).
-- **Helyadat**: induláskor és közvetítés alatt folyamatosan (Fused Location Provider).
-- **Hozzászólások**: az aktív eseménynél 10 mp-enként frissül, olvasatlan számláló; a nézők a
-  mock szerver nyilvános oldalán (`/e/<id>`, ez az SMS-ben küldött link) tudnak írni.
-- **Eseményeim**: lista + részletek, hozzászólások.
-- **Profil**: név, SOS telefonszámok (`+36301234567` formátum), SOS üzenet szövege.
-- Magyar és angol felület.
-
-## Architektúra
-
-```
-app/src/main/java/info/soslive/stream/
-├── core/          AppConfig (BuildConfig értékek), UiText
-├── data/
-│   ├── remote/    Retrofit API (AuthApi, SosLiveApi), DTO-k, AuthInterceptor, TokenAuthenticator
-│   ├── local/     DataStore: session, aktív esemény
-│   └── repository/ Auth-, Profile-, EventRepository implementációk
-├── domain/        modellek, repository interfészek, SosContacts validáció
-├── auth/sso/      Google (Credential Manager), Facebook, szimulált SSO
-├── stream/        StreamController – RootEncoder (Camera2 + MediaCodec) RTMP publisher
-├── location/      LocationTracker (Fused Location, Flow)
-├── sms/           SosSmsSender
-├── di/            Hilt modulok
-└── ui/            Compose képernyők + ViewModel-ek (auth, stream, events, profile, navigation)
-```
-
-- Kotlin, Jetpack Compose (Material 3), MVVM + egyirányú adatfolyam (StateFlow + egyszeri effektek)
-- Hilt DI, Coroutines/Flow, Retrofit + OkHttp + kotlinx.serialization, DataStore
-- Navigation Compose típusos route-okkal; a bejelentkezett állapot dönti el, melyik NavHost látszik
-- minSdk 26, targetSdk 35
-
-## iOS app (`ios/`)
-
-SwiftUI alkalmazás ugyanazokkal a funkciókkal és ugyanarra a backendre (mock-server).
-
-```bash
-brew install xcodegen
-cd ios
-xcodegen generate            # SOSlive.xcodeproj létrehozása a project.yml-ből
-open SOSlive.xcodeproj       # Run a szimulátoron (a mock szervert localhost:3000-en éri el)
-```
-
-Konfiguráció: `ios/Config/Secrets.xcconfig` (minta: `Secrets.example.xcconfig`), minden érték opcionális:
-backend URL (`SOSLIVE_API_BASE_URL`), Google iOS + Web kliens azonosító, Facebook app id +
-client token, fejlesztői csapat (valódi eszközre telepítéshez). Üres Google/Facebook értékek
-esetén a bejelentkezés szimulált, mint Androidon.
-
-```
-ios/
-├── project.yml                  XcodeGen projekt (iOS 16+)
-├── Config/                      xcconfig beállítások
-├── Packages/SOSliveCore/        platformfüggetlen mag: modellek, API kliens (token frissítés),
-│                                szolgáltatások, validáció, Keychain session + unit tesztek
-└── SOSlive/
-    ├── App/                     belépési pont, AppState (session), AppConfig, RootView
-    ├── Auth/                    login/regisztráció, Google/Facebook/szimulált SSO
-    ├── Stream/                  HaishinKit RTMP (StreamController), fő képernyő, hozzászólások
-    ├── Events/, Profile/        eseményeim, profil (SOS számok, üzenet)
-    ├── Services/                helyadat (CoreLocation), SMS szerkesztő, kamera
-    └── Resources/               lokalizáció (en, hu), képek
-```
-
-iOS sajátosságok: az SMS-t a rendszer nem engedi csendben elküldeni – az app kitöltött
-üzenetet nyit, amit a felhasználó küld el; a közvetítés háttérbe kerüléskor leáll; a tokenek a
-Keychainben vannak.
-
-Tesztek: `swift test --package-path ios/Packages/SOSliveCore` (macOS).
-
-## Backend (mock-server)
-
-Node 20 + Express, JSON fájl alapú tárolás (`data/db.json`), JWT. Az API szerződés:
-[`mock-server/openapi.yaml`](mock-server/openapi.yaml) – a valódi backendnek ezt kell
-megvalósítania, és az app változtatás nélkül működik vele (csak `soslive.apiBaseUrl` kell).
-
-```bash
-cd mock-server && npm test
-```
+Helyi stream szerver teszteléshez: `docker compose up` (MediaMTX, RTMP :1935, HLS :8888).
 
 ## Fejlesztés
 
 ```bash
+# Android
 ./gradlew testDebugUnitTest lintDebug assembleDebug
+
+# iOS
+cd ios && swift test --package-path Packages/SOSliveCore
+brew install xcodegen && xcodegen generate && open SOSlive.xcodeproj
 ```
 
-A CI (`.github/workflows/ci.yml`) a mock szerver tesztjeit és az Android buildet/teszteket is futtatja.
+A CI (`.github/workflows/ci.yml`) mindkét platformot buildeli és teszteli.
 
-### Ismert korlátok / következő lépések
+### Felépítés
 
-- A közvetítés leáll, ha az app háttérbe kerül (nincs foreground service).
-- A tokenek titkosítatlan DataStore-ban vannak – éles verzióhoz titkosítás (pl. Tink) javasolt.
-- A release build a debug kulccsal van aláírva – publikálás előtt saját keystore kell.
-- A mock szerver egy példányos, fájl alapú – csak fejlesztésre való.
+```
+app/src/main/java/info/soslive/stream/
+├── auth/        Google belépés + drive.file (Credential Manager, AuthorizationClient), fiók tár
+├── drive/       Drive REST kliens, szimulált Drive, SosliveDrive (mappa/config/esemény/rotáció),
+│                EventWriter, fájlformátumok
+├── stream/      StreamProvider (sablon), StreamController (RootEncoder RTMP)
+├── location/, sms/   helyadat, SMS / e-mail értesítés
+└── ui/          Compose képernyők: belépés, fő képernyő, eseményeim, beállítások
 
-## Köszönet
+ios/
+├── Packages/SOSliveCore/   ugyanez platformfüggetlenül (DriveAPI, SosliveDrive, EventWriter,
+│                           formátumok, StreamProvider) + tesztek
+└── SOSlive/                SwiftUI app: GoogleSignIn, HaishinKit RTMP, képernyők
+```
 
-A korábbi verzió a [yasea](https://github.com/begeekmyfriend/yasea) projektre épült; az új
-streaming motor a [RootEncoder](https://github.com/pedroSG94/RootEncoder).
+### Nyitott kérdések (az útmutatóból)
+
+- Automatikus (háttér) értesítés kell-e, vagy elég a kitöltött SMS / e-mail?
+- Képek tárhelye: most Drive + nyilvános megosztás (`drive.google.com/thumbnail`), ami nem
+  minden esetben jelenik meg megbízhatóan.
+- Régi események / linkek átvitele; végleges web cím.
+- Céges (Workspace) fiókoknál az „anyone with link” megosztás tiltva lehet – az app jelzi.
+
+### Ismert korlátok
+
+- A közvetítés leáll, ha az app háttérbe kerül.
+- A release build a debug kulccsal van aláírva (Android) – publikálás előtt saját kulcs kell.
