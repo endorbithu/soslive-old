@@ -1,6 +1,7 @@
 package info.soslive.stream.drive
 
-import info.soslive.stream.stream.TemplateStreamProvider
+import info.soslive.stream.stream.StreamSettings
+import info.soslive.stream.stream.UserStreamProvider
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -75,12 +76,46 @@ class DriveModelsTest {
     }
 
     @Test
-    fun `template stream provider builds publish and playback urls from one random key`() = runTest {
-        val provider = TemplateStreamProvider("rtmp://h:1935/live/", "https://h/live/{key}/index.m3u8")
-        val session = provider.createStream()
-        val key = session.publishUrl.removePrefix("rtmp://h:1935/live/")
-        assertTrue(key.matches(Regex("[0-9a-f]{32}")))
-        assertEquals("https://h/live/$key/index.m3u8", session.playbackUrl)
-        assertFalse(key == provider.newKey())
+    fun `user stream provider joins url and key and fills the recording start`() = runTest {
+        val settings = StreamSettings(
+            rtmpUrl = "rtmps://live.example.com:443/app/",
+            streamKey = " secret-key ",
+            playbackUrl = "https://cdn.example.com/live.m3u8",
+            pageUrl = "https://www.youtube.com/@me/live",
+            recordingUrl = "https://rec.example.com/get?start={start}",
+        )
+        val start = Instant.parse("2026-09-29T14:03:22.456Z")
+        val session = UserStreamProvider { settings }.createStream(start)!!
+        assertEquals("rtmps://live.example.com:443/app/secret-key", session.publishUrl)
+        assertEquals("https://cdn.example.com/live.m3u8", session.playbackUrl)
+        assertEquals("https://www.youtube.com/@me/live", session.pageUrl)
+        assertEquals("https://rec.example.com/get?start=2026-09-29T14:03:22Z", session.recordingUrl)
+
+        assertEquals("rtmp://h/live/k", StreamSettings(rtmpUrl = "rtmp://h/live/k").publishUrl)
+        assertEquals(null, UserStreamProvider { StreamSettings() }.createStream(start))
+    }
+
+    @Test
+    fun `stream settings validation`() {
+        assertTrue(StreamSettings().validate().isEmpty())
+        assertTrue(StreamSettings(rtmpUrl = "rtmp://h/live", playbackUrl = "https://h/x.m3u8", recordingUrl = "https://h/{start}").validate().isEmpty())
+        assertEquals(listOf(StreamSettings.Field.RTMP_URL), StreamSettings(rtmpUrl = "https://h/live").validate())
+        assertEquals(listOf(StreamSettings.Field.RTMP_URL), StreamSettings(streamKey = "k").validate())
+        assertEquals(
+            listOf(StreamSettings.Field.PLAYBACK_URL, StreamSettings.Field.PAGE_URL),
+            StreamSettings(rtmpUrl = "rtmps://h/live", playbackUrl = "rtmp://h", pageUrl = "javascript:alert(1)").validate(),
+        )
+    }
+
+    @Test
+    fun `stream_page and recording are written only when set`() {
+        val plain = EventDocument(stream = "").toJson()
+        assertFalse("stream_page" in plain)
+        assertFalse("recording" in plain)
+        val full = EventDocument(stream = "https://h/x.m3u8", streamPage = "https://yt/live", recording = "https://h/rec.mp4")
+        val parsed = EventDocument.parse(full.toJson().toString().toByteArray())
+        assertEquals("https://yt/live", parsed.streamPage)
+        assertEquals("https://h/rec.mp4", parsed.recording)
+        assertEquals("https://h/x.m3u8", parsed.stream)
     }
 }

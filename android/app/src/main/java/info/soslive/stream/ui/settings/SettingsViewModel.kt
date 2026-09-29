@@ -12,6 +12,8 @@ import info.soslive.stream.core.ui.toUiText
 import info.soslive.stream.drive.ContactRules
 import info.soslive.stream.drive.SosConfig
 import info.soslive.stream.drive.SosliveDrive
+import info.soslive.stream.stream.StreamSettings
+import info.soslive.stream.stream.StreamSettingsStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +32,9 @@ data class SettingsUiState(
     val maxEventsError: UiText? = null,
     val saving: Boolean = false,
     val message: UiText? = null,
+    /** The user's own streaming service - stored only on this phone. */
+    val stream: StreamSettings = StreamSettings(),
+    val streamErrors: Set<StreamSettings.Field> = emptySet(),
 )
 
 /** Edits config.json on Drive - the web only shows it ("can only be changed in the mobile app"). */
@@ -38,6 +43,7 @@ class SettingsViewModel @Inject constructor(
     private val accountStore: AccountStore,
     private val drive: SosliveDrive,
     private val googleAuth: GoogleAuth,
+    private val streamStore: StreamSettingsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -48,7 +54,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _state.update { it.copy(account = accountStore.currentAccount()) }
+            _state.update { it.copy(account = accountStore.currentAccount(), stream = streamStore.load()) }
             drive.cachedConfig()?.let(::fill)
             try {
                 drive.readRemoteConfig()?.let(::fill)
@@ -106,9 +112,28 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** Local data only; the files on Drive stay. */
+    fun onStreamChange(value: StreamSettings) = _state.update { it.copy(stream = value, streamErrors = emptySet(), message = null) }
+
+    /** Saved on the phone only (the key encrypted with the Android Keystore) - never to Drive. */
+    fun saveStream() {
+        val stream = _state.value.stream
+        val errors = stream.validate().toSet()
+        _state.update { it.copy(streamErrors = errors) }
+        if (errors.isNotEmpty()) return
+        viewModelScope.launch {
+            try {
+                streamStore.save(stream)
+                _state.update { it.copy(message = UiText.Res(R.string.stream_settings_saved)) }
+            } catch (e: Exception) {
+                _state.update { it.copy(message = e.toUiText()) }
+            }
+        }
+    }
+
+    /** Local data only (including the stream settings); the files on Drive stay. */
     fun signOut() {
         viewModelScope.launch {
+            streamStore.clear()
             googleAuth.signOut()
             accountStore.setAccount(null)
         }

@@ -93,4 +93,21 @@
     <string name="error_drive">Google Drive error: %1$s</string>
     <string name="error_drive_missing">The incident file was deleted from Drive – writing stopped.</string>
     <string name="error_drive_permission">Google Drive access is needed – sign out and sign in again to allow it.</string>
+    <string name="stream_not_configured">Set up your streaming service in Settings to go live.</string>
+    <string name="stream_not_configured_sos">No streaming service set up – the event, position and notification went out without video.</string>
+    <string name="settings_stream_section">Streaming service</string>
+    <string name="settings_stream_note">Your own live streaming service (YouTube Live, Facebook Live, Twitch, Cloudflare Stream, your own server…). These details stay on this phone only; the stream key is encrypted and is never sent to Google Drive or the website. Only the public URLs below go into the event file.</string>
+    <string name="field_stream_rtmp_url">RTMP(S) server URL</string>
+    <string name="field_stream_rtmp_url_hint">e.g. rtmp://a.rtmp.youtube.com/live2</string>
+    <string name="field_stream_key">Stream key</string>
+    <string name="field_stream_key_hint">Secret – appended to the server URL. Leave empty if the URL already contains it.</string>
+    <string name="field_stream_playback_url">Playback URL (optional)</string>
+    <string name="field_stream_playback_url_hint">Directly playable HLS (.m3u8) or MP4 link – shown as a player on the event page</string>
+    <string name="field_stream_page_url">Viewer page (optional)</string>
+    <string name="field_stream_page_url_hint">e.g. your YouTube / Twitch channel page</string>
+    <string name="field_stream_recording_url">Recording URL (optional)</string>
+    <string name="field_stream_recording_url_hint">Where the recording can be downloaded / watched later. {start} = event start time (UTC).</string>
+    <string name="error_stream_url">Invalid URL (the server needs rtmp:// or rtmps://, the others http(s)://)</string>
+    <string name="action_save_stream">Save streaming settings</string>
+    <string name="stream_settings_saved">Streaming settings saved on this phone</string>
 </resources>

@@ -120,11 +120,19 @@ class StreamViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val location = locationTracker.currentLocation()
-                val stream = streamProvider.createStream()
                 val start = Instant.now(clock)
+                // The user's own streaming service from the settings (device only); null = not set up.
+                val stream = streamProvider.createStream(start)
+                if (stream == null && type == EventType.LIVE) {
+                    _state.update { it.copy(phase = LivePhase.IDLE) }
+                    message(UiText.Res(R.string.stream_not_configured))
+                    return@launch
+                }
+                val location = locationTracker.currentLocation()
                 val document = EventDocument(
-                    stream = stream.playbackUrl,
+                    stream = stream?.playbackUrl.orEmpty(),
+                    streamPage = stream?.pageUrl.orEmpty(),
+                    recording = stream?.recordingUrl.orEmpty(),
                     entries = listOfNotNull(location?.let { EventEntry.position(start, it.lat, it.lng) }),
                 )
                 val created = drive.createEvent(start, document)
@@ -132,11 +140,18 @@ class StreamViewModel @Inject constructor(
                 val eventWriter = openWriter(created.fileId, document)
                 accountStore.setActiveEvent(ActiveEvent(created.fileId, type, eventTitle(created.name), created.link, clock.millis()))
 
-                publishUrl = stream.publishUrl
-                retries = 0
-                _state.update { it.copy(phase = LivePhase.CONNECTING, liveType = type) }
-                _effects.send(StreamEffect.StartPublishing(stream.publishUrl))
-                startLocationUpdates(eventWriter)
+                if (stream != null) {
+                    publishUrl = stream.publishUrl
+                    retries = 0
+                    _state.update { it.copy(phase = LivePhase.CONNECTING, liveType = type) }
+                    _effects.send(StreamEffect.StartPublishing(stream.publishUrl))
+                    startLocationUpdates(eventWriter)
+                } else {
+                    // SOS without streaming: the event, the position and the notification still go out.
+                    _state.update { it.copy(phase = LivePhase.IDLE) }
+                    message(UiText.Res(R.string.stream_not_configured_sos))
+                    if (location == null) sendFirstFix(eventWriter)
+                }
                 if (type == EventType.SOS) notifyContacts(created.link)
                 rotateInBackground()
             } catch (e: CancellationException) {

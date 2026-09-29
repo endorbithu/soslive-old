@@ -13,6 +13,9 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var loading = true
     @Published private(set) var saving = false
     @Published var message: String?
+    /// The user's own streaming service - stored only on this phone (Keychain).
+    @Published var stream: StreamSettings
+    @Published private(set) var streamErrors: Set<StreamSettings.Field> = []
 
     private let app: AppState
     /// Last loaded config - keeps unknown fields when saving.
@@ -22,6 +25,7 @@ final class SettingsViewModel: ObservableObject {
 
     init(app: AppState) {
         self.app = app
+        stream = app.streamSettings.load()
         if let cached = app.drive.cachedConfig { fill(cached) }
     }
 
@@ -68,6 +72,13 @@ final class SettingsViewModel: ObservableObject {
                 message = L10n.error(error)
             }
         }
+    }
+
+    /// Saved in the Keychain on this device only - never to Drive.
+    func saveStream() {
+        streamErrors = stream.validate()
+        guard streamErrors.isEmpty else { return }
+        message = app.streamSettings.save(stream) ? L10n.tr("stream.settings_saved") : L10n.tr("error.generic")
     }
 
     func signOut() { app.signOut() }
@@ -132,6 +143,21 @@ struct SettingsView: View {
             }
 
             Section {
+                urlField("field.stream_rtmp_url", prompt: "rtmp://a.rtmp.youtube.com/live2", text: $model.stream.rtmpURL, field: .rtmpURL)
+                SecureField("field.stream_key", text: $model.stream.streamKey)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                urlField("field.stream_playback_url", prompt: "https://…/index.m3u8", text: $model.stream.playbackURL, field: .playbackURL)
+                urlField("field.stream_page_url", prompt: "https://www.youtube.com/@…/live", text: $model.stream.pageURL, field: .pageURL)
+                urlField("field.stream_recording_url", prompt: "https://…", text: $model.stream.recordingURL, field: .recordingURL)
+                Button("action.save_stream", action: model.saveStream)
+            } header: {
+                Text("settings.stream_section")
+            } footer: {
+                Text("settings.stream_note")
+            }
+
+            Section {
                 Button("action.logout", role: .destructive) { confirmSignOut = true }
             } footer: {
                 Text("logout.note")
@@ -144,6 +170,20 @@ struct SettingsView: View {
         }
         .alert(model.message ?? "", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
             Button("OK", role: .cancel) {}
+        }
+    }
+
+    @ViewBuilder
+    private func urlField(_ title: LocalizedStringKey, prompt: String, text: Binding<String>, field: StreamSettings.Field) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            TextField(prompt, text: text)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            if model.streamErrors.contains(field) {
+                Text("error.stream_url").font(.caption).foregroundStyle(.red)
+            }
         }
     }
 }

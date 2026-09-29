@@ -1,16 +1,12 @@
 // SOSlive iOS configuration. There is no SOSlive backend: incidents go to the user's own
-// Google Drive, video to the stream server.
+// Google Drive, video to the user's own streaming service (entered in the app's settings,
+// stored only on the phone).
 // Override values in Config/Secrets.xcconfig (git-ignored):
 //   cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
 // xcconfig treats "//" as a comment, hence the "$()" in URLs.
 
 // Web app that shows the events: links are <webapp>/e/{fileId}
 SOSLIVE_WEBAPP_URL = https:/$()/soslive.example
-
-// RTMP ingest (a random stream key is appended per event) and HLS playback template.
-// Defaults: MediaMTX from docker-compose.yml, reachable from the iOS simulator on localhost.
-SOSLIVE_STREAM_RTMP_URL = rtmp:/$()/localhost:1935/live
-SOSLIVE_STREAM_HLS_TEMPLATE = http:/$()/localhost:8888/live/{key}/index.m3u8
 
 // Google Sign-In: the iOS OAuth client of the SAME Google Cloud project as the web app,
 // and its reversed form (URL scheme). Empty = simulated Drive (files stay on the device).

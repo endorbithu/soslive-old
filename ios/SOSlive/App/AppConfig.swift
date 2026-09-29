@@ -7,9 +7,6 @@ enum AppConfig {
     }
 
     static let webappURL = value("SOSliveWebappURL").isEmpty ? "https://soslive.example" : value("SOSliveWebappURL")
-    static let streamRTMPURL = value("SOSliveStreamRTMPURL").isEmpty ? "rtmp://localhost:1935/live" : value("SOSliveStreamRTMPURL")
-    static let streamHLSTemplate = value("SOSliveStreamHLSTemplate").isEmpty
-        ? "http://localhost:8888/live/{key}/index.m3u8" : value("SOSliveStreamHLSTemplate")
     static let googleClientID = value("SOSliveGoogleClientID")
 
     /// Without an iOS client id the app keeps its "Drive" files locally (development only).

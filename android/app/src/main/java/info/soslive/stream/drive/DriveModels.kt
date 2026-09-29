@@ -114,9 +114,16 @@ value class EventEntry(val json: JsonObject) {
     }
 }
 
-/** Event file: `{"v": 1, "stream": "...", "entries": [...]}`. */
+/**
+ * Event file: `{"v": 1, "stream": "...", "stream_page": "...", "recording": "...", "entries": [...]}`.
+ * "stream" is a directly playable URL (HLS / MP4), "stream_page" the viewer page of the user's
+ * streaming service, "recording" where the recording can be downloaded / watched later.
+ * The optional fields are only written when set.
+ */
 data class EventDocument(
     val stream: String = "",
+    val streamPage: String = "",
+    val recording: String = "",
     val entries: List<EventEntry> = emptyList(),
     val raw: JsonObject = JsonObject(emptyMap()),
 ) {
@@ -124,6 +131,8 @@ data class EventDocument(
         raw.forEach { (key, value) -> put(key, value) }
         put("v", JsonPrimitive(1))
         put("stream", JsonPrimitive(stream))
+        if (streamPage.isNotBlank()) put("stream_page", JsonPrimitive(streamPage))
+        if (recording.isNotBlank()) put("recording", JsonPrimitive(recording))
         put("entries", JsonArray(entries.map<EventEntry, JsonElement> { it.json }))
     }
 
@@ -134,6 +143,8 @@ data class EventDocument(
             val obj = DriveJson.parseToJsonElement(bytes.decodeToString()).jsonObject
             return EventDocument(
                 stream = (obj["stream"] as? JsonPrimitive)?.contentOrNull.orEmpty(),
+                streamPage = (obj["stream_page"] as? JsonPrimitive)?.contentOrNull.orEmpty(),
+                recording = (obj["recording"] as? JsonPrimitive)?.contentOrNull.orEmpty(),
                 entries = (obj["entries"] as? JsonArray)?.mapNotNull { (it as? JsonObject)?.let(::EventEntry) }.orEmpty(),
                 raw = obj,
             )

@@ -84,3 +84,17 @@
 "error.drive" = "Google Drive error: %@";
 "error.drive_missing" = "The incident file was deleted from Drive – writing stopped.";
 "error.drive_permission" = "Google Drive access is needed – sign out and sign in again to allow it.";
+
+/* Streaming service (device only) */
+"stream.not_configured" = "Set up your streaming service in Settings to go live.";
+"stream.not_configured_sos" = "No streaming service set up – the event, position and notification went out without video.";
+"settings.stream_section" = "Streaming service";
+"settings.stream_note" = "Your own live streaming service (YouTube Live, Facebook Live, Twitch, Cloudflare Stream, your own server…). These details stay on this phone only (Keychain); the stream key is never sent to Google Drive or the website. Only the playback, viewer page and recording URLs go into the event file. In the recording URL, {start} is replaced with the event start time (UTC).";
+"field.stream_rtmp_url" = "RTMP(S) server URL";
+"field.stream_key" = "Stream key (secret)";
+"field.stream_playback_url" = "Playback URL – HLS / MP4 (optional)";
+"field.stream_page_url" = "Viewer page (optional)";
+"field.stream_recording_url" = "Recording URL (optional)";
+"error.stream_url" = "Invalid URL (the server needs rtmp:// or rtmps://, the others http(s)://)";
+"action.save_stream" = "Save streaming settings";
+"stream.settings_saved" = "Streaming settings saved on this phone";

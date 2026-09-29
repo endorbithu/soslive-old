@@ -11,9 +11,10 @@ plugins {
 
 /**
  * App configuration. Every value is optional; read from (first match wins):
- *   1. -P gradle property      e.g. ./gradlew assembleDebug -Psoslive.streamRtmpUrl=rtmp://192.168.1.10:1935/live
- *   2. local.properties        e.g. soslive.streamRtmpUrl=rtmp://192.168.1.10:1935/live
- * There is no SOSlive backend: data goes to the user's Google Drive, video to the stream server.
+ *   1. -P gradle property      e.g. ./gradlew assembleDebug -Psoslive.webappUrl=https://soslive.example.com
+ *   2. local.properties        e.g. soslive.webappUrl=https://soslive.example.com
+ * There is no SOSlive backend: data goes to the user's Google Drive, video to the user's own
+ * streaming service (entered in the app's settings, stored only on the phone).
  */
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
@@ -27,9 +28,6 @@ fun String.asBuildConfigString() = "\"" + replace("\\", "\\\\").replace("\"", "\
 
 // Web app that shows events: links are <webappUrl>/e/{fileId}
 val webappUrl = appConfig("soslive.webappUrl", "https://soslive.example").trimEnd('/')
-// RTMP ingest (stream key is appended) and HLS playback template ({key} is replaced)
-val streamRtmpUrl = appConfig("soslive.streamRtmpUrl", "rtmp://10.0.2.2:1935/live").trimEnd('/')
-val streamHlsTemplate = appConfig("soslive.streamHlsTemplate", "http://10.0.2.2:8888/live/{key}/index.m3u8")
 // Google Cloud *Web* OAuth client id (same project as the web app). Empty = simulated Drive.
 val googleWebClientId = appConfig("soslive.googleWebClientId")
 
@@ -47,8 +45,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "WEBAPP_URL", webappUrl.asBuildConfigString())
-        buildConfigField("String", "STREAM_RTMP_URL", streamRtmpUrl.asBuildConfigString())
-        buildConfigField("String", "STREAM_HLS_TEMPLATE", streamHlsTemplate.asBuildConfigString())
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId.asBuildConfigString())
     }
 

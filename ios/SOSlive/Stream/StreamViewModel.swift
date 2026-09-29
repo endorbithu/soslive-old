@@ -89,21 +89,38 @@ final class StreamViewModel: ObservableObject {
         phase = .creatingEvent
         Task {
             do {
-                let stream = try await app.streamProvider.createStream()
                 let start = Date()
+                // The user's own streaming service from the settings (device only); nil = not set up.
+                let stream = try await app.streamProvider.createStream(start: start)
+                if stream == nil && kind == .live {
+                    phase = .idle
+                    show(L10n.tr("stream.not_configured"))
+                    return
+                }
                 let location = app.location.last
-                var document = EventDocument(stream: stream.playbackURL)
+                var document = EventDocument(
+                    stream: stream?.playbackURL ?? "",
+                    streamPage: stream?.pageURL ?? "",
+                    recording: stream?.recordingURL ?? ""
+                )
                 if let location { document.entries.append(.position(start, lat: location.lat, lng: location.lng)) }
                 let created = try await drive.createEvent(start: start, document: document)
                 if !created.shared { show(L10n.tr("share.failed", created.shareError ?? "")) }
                 let eventWriter = openWriter(fileId: created.fileId, document: document)
                 setActive(ActiveEvent(fileId: created.fileId, kind: kind, title: eventTitle(fileName: created.name), link: created.link, startedAt: start))
 
-                session = stream
-                retries = 0
-                phase = .connecting
-                controller.start(url: stream.rtmpURL, streamKey: stream.streamKey)
-                startLocationUpdates(eventWriter)
+                if let stream {
+                    session = stream
+                    retries = 0
+                    phase = .connecting
+                    controller.start(url: stream.rtmpURL, streamKey: stream.streamKey)
+                    startLocationUpdates(eventWriter)
+                } else {
+                    // SOS without streaming: the event, the position and the notification still go out.
+                    phase = .idle
+                    show(L10n.tr("stream.not_configured_sos"))
+                    if location == nil { sendFirstFix(eventWriter) }
+                }
                 if kind == .sos { await notifyContacts(link: created.link) }
                 rotateInBackground()
             } catch {

@@ -59,8 +59,6 @@ targets:
         NSLocationWhenInUseUsageDescription: Your location is attached to your incidents so helpers can find you.
         # App configuration (see Config/Base.xcconfig). There is no SOSlive backend.
         SOSliveWebappURL: $(SOSLIVE_WEBAPP_URL)
-        SOSliveStreamRTMPURL: $(SOSLIVE_STREAM_RTMP_URL)
-        SOSliveStreamHLSTemplate: $(SOSLIVE_STREAM_HLS_TEMPLATE)
         SOSliveGoogleClientID: $(GOOGLE_IOS_CLIENT_ID)
         CFBundleURLTypes:
           - CFBundleURLSchemes: [$(GOOGLE_REVERSED_CLIENT_ID)]

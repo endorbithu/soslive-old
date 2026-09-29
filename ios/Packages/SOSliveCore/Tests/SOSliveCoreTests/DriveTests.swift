@@ -52,14 +52,50 @@ final class DriveModelsTests: XCTestCase {
         XCTAssertEqual(ContactRules.split(" a@b.hu ,c@d.hu;\n a@b.hu \n"), ["a@b.hu", "c@d.hu"])
     }
 
-    func testTemplateStreamProvider() async throws {
-        let provider = TemplateStreamProvider(rtmpURL: "rtmp://h:1935/live/", hlsTemplate: "https://h/live/{key}/index.m3u8")
-        let session = try await provider.createStream()
-        XCTAssertEqual(session.rtmpURL, "rtmp://h:1935/live")
-        XCTAssertNotNil(session.streamKey.range(of: "^[0-9a-f]{32}$", options: .regularExpression))
-        XCTAssertEqual(session.publishURL, "rtmp://h:1935/live/\(session.streamKey)")
-        XCTAssertEqual(session.playbackURL, "https://h/live/\(session.streamKey)/index.m3u8")
+    func testUserStreamProvider() async throws {
+        let settings = StreamSettings(
+            rtmpURL: "rtmps://live.example.com:443/app/",
+            streamKey: " secret-key ",
+            playbackURL: "https://cdn.example.com/live.m3u8",
+            pageURL: "https://www.youtube.com/@me/live",
+            recordingURL: "https://rec.example.com/get?start={start}"
+        )
+        let start = parseISO("2026-09-29T14:03:22.456Z")!
+        let session = try await UserStreamProvider { settings }.createStream(start: start)
+        XCTAssertEqual(session?.rtmpURL, "rtmps://live.example.com:443/app")
+        XCTAssertEqual(session?.streamKey, "secret-key")
+        XCTAssertEqual(session?.publishURL, "rtmps://live.example.com:443/app/secret-key")
+        XCTAssertEqual(session?.playbackURL, "https://cdn.example.com/live.m3u8")
+        XCTAssertEqual(session?.pageURL, "https://www.youtube.com/@me/live")
+        XCTAssertEqual(session?.recordingURL, "https://rec.example.com/get?start=2026-09-29T14:03:22Z")
+
+        // Key inside the URL: connect to the app, publish the last path component.
+        let inline = try await UserStreamProvider { StreamSettings(rtmpURL: "rtmp://h/live/k") }.createStream(start: start)
+        XCTAssertEqual(inline?.rtmpURL, "rtmp://h/live")
+        XCTAssertEqual(inline?.streamKey, "k")
+        let none = try await UserStreamProvider { StreamSettings() }.createStream(start: start)
+        XCTAssertNil(none)
     }
+
+    func testStreamSettingsValidation() {
+        XCTAssertEqual(StreamSettings().validate(), [])
+        XCTAssertEqual(StreamSettings(rtmpURL: "rtmp://h/live", playbackURL: "https://h/x.m3u8", recordingURL: "https://h/{start}").validate(), [])
+        XCTAssertEqual(StreamSettings(rtmpURL: "https://h/live").validate(), [.rtmpURL])
+        XCTAssertEqual(StreamSettings(streamKey: "k").validate(), [.rtmpURL])
+        XCTAssertEqual(StreamSettings(rtmpURL: "rtmps://h/live", playbackURL: "rtmp://h", pageURL: "javascript:alert(1)").validate(), [.playbackURL, .pageURL])
+    }
+
+    func testOptionalStreamFieldsWrittenOnlyWhenSet() throws {
+        let plain = try JSON.object(from: EventDocument().encoded())
+        XCTAssertNil(plain["stream_page"])
+        XCTAssertNil(plain["recording"])
+        let full = EventDocument(stream: "https://h/x.m3u8", streamPage: "https://yt/live", recording: "https://h/rec.mp4")
+        let parsed = try EventDocument(data: full.encoded())
+        XCTAssertEqual(parsed.stream, "https://h/x.m3u8")
+        XCTAssertEqual(parsed.streamPage, "https://yt/live")
+        XCTAssertEqual(parsed.recording, "https://h/rec.mp4")
+    }
+}
 }
 
 final class SosliveDriveTests: XCTestCase {

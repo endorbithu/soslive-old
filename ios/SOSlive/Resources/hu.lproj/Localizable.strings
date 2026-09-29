@@ -84,3 +84,17 @@
 "error.drive" = "Google Drive hiba: %@";
 "error.drive_missing" = "Az esemény fájlját törölték a Drive-ról – az írás leállt.";
 "error.drive_permission" = "Google Drive hozzáférés szükséges – jelentkezz ki, majd be, és engedélyezd.";
+
+/* Stream szolgáltató (csak a telefonon) */
+"stream.not_configured" = "Élő videóhoz add meg a stream szolgáltatódat a Beállításokban.";
+"stream.not_configured_sos" = "Nincs stream szolgáltató beállítva – az esemény, a helyadat és az értesítés videó nélkül ment ki.";
+"settings.stream_section" = "Stream szolgáltató";
+"settings.stream_note" = "A saját élő közvetítő szolgáltatásod (YouTube Live, Facebook Live, Twitch, Cloudflare Stream, saját szerver…). Ezek az adatok csak ezen a telefonon maradnak (Kulcskarika); a stream kulcs nem kerül se a Google Drive-ra, se a weboldalra. Az eseményfájlba csak a lejátszási, nézői oldal és felvétel URL kerül. A felvétel URL-ben a {start} helyére az esemény kezdete (UTC) kerül.";
+"field.stream_rtmp_url" = "RTMP(S) szerver URL";
+"field.stream_key" = "Stream kulcs (titkos)";
+"field.stream_playback_url" = "Lejátszási URL – HLS / MP4 (nem kötelező)";
+"field.stream_page_url" = "Nézői oldal (nem kötelező)";
+"field.stream_recording_url" = "Felvétel URL (nem kötelező)";
+"error.stream_url" = "Érvénytelen URL (a szerverhez rtmp:// vagy rtmps://, a többihez http(s):// kell)";
+"action.save_stream" = "Stream beállítások mentése";
+"stream.settings_saved" = "Stream beállítások elmentve ezen a telefonon";

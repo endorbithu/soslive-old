@@ -127,14 +127,21 @@ public struct EventEntry {
     }
 }
 
-/// Event file: {"v": 1, "stream": "...", "entries": [...]}.
+/// Event file: {"v": 1, "stream": "...", "stream_page": "...", "recording": "...", "entries": [...]}.
+/// "stream" is a directly playable URL (HLS / MP4), "stream_page" the viewer page of the user's
+/// streaming service, "recording" where the recording can be downloaded / watched later.
+/// The optional fields are only written when set.
 public struct EventDocument {
     public var stream: String
+    public var streamPage: String
+    public var recording: String
     public var entries: [EventEntry]
     public var raw: JSONObject
 
-    public init(stream: String = "", entries: [EventEntry] = [], raw: JSONObject = [:]) {
+    public init(stream: String = "", streamPage: String = "", recording: String = "", entries: [EventEntry] = [], raw: JSONObject = [:]) {
         self.stream = stream
+        self.streamPage = streamPage
+        self.recording = recording
         self.entries = entries
         self.raw = raw
     }
@@ -143,6 +150,8 @@ public struct EventDocument {
         let object = try JSON.object(from: data)
         self.init(
             stream: object["stream"] as? String ?? "",
+            streamPage: object["stream_page"] as? String ?? "",
+            recording: object["recording"] as? String ?? "",
             entries: (object["entries"] as? [JSONObject] ?? []).map(EventEntry.init(json:)),
             raw: object
         )
@@ -152,6 +161,8 @@ public struct EventDocument {
         var object = raw
         object["v"] = 1
         object["stream"] = stream
+        if !streamPage.isEmpty { object["stream_page"] = streamPage }
+        if !recording.isEmpty { object["recording"] = recording }
         object["entries"] = entries.map(\.json)
         return JSON.data(object)
     }

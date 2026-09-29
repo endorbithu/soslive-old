@@ -11,6 +11,8 @@ final class AppState: ObservableObject {
     let auth: GoogleAuth
     let accounts = AccountStore()
     let drive: SosliveDrive
+    /// The user's own streaming service - on this phone only (Keychain).
+    let streamSettings: StreamSettingsStore
     let streamProvider: StreamProvider
     let location = LocationTracker()
 
@@ -26,7 +28,9 @@ final class AppState: ObservableObject {
             api = LocalDriveAPI(root: root)
         }
         drive = SosliveDrive(drive: api, cache: UserDefaultsDriveCache(), webappURL: AppConfig.webappURL)
-        streamProvider = TemplateStreamProvider(rtmpURL: AppConfig.streamRTMPURL, hlsTemplate: AppConfig.streamHLSTemplate)
+        let streamSettings = StreamSettingsStore()
+        self.streamSettings = streamSettings
+        streamProvider = UserStreamProvider { streamSettings.load() }
         account = accounts.account
     }
 
@@ -56,6 +60,7 @@ final class AppState: ObservableObject {
     private func signOutLocally() {
         accounts.account = nil
         accounts.activeEvent = nil
+        streamSettings.clear()
         drive.forgetLocalState()
         account = nil
     }

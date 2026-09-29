@@ -91,4 +91,21 @@
     <string name="error_drive">Google Drive hiba: %1$s</string>
     <string name="error_drive_missing">Az esemény fájlját törölték a Drive-ról – az írás leállt.</string>
     <string name="error_drive_permission">Google Drive hozzáférés szükséges – jelentkezz ki, majd be, és engedélyezd.</string>
+    <string name="stream_not_configured">Élő videóhoz add meg a stream szolgáltatódat a Beállításokban.</string>
+    <string name="stream_not_configured_sos">Nincs stream szolgáltató beállítva – az esemény, a helyadat és az értesítés videó nélkül ment ki.</string>
+    <string name="settings_stream_section">Stream szolgáltató</string>
+    <string name="settings_stream_note">A saját élő közvetítő szolgáltatásod (YouTube Live, Facebook Live, Twitch, Cloudflare Stream, saját szerver…). Ezek az adatok csak ezen a telefonon maradnak; a stream kulcs titkosítva van, és nem kerül se a Google Drive-ra, se a weboldalra. Az eseményfájlba csak az alábbi nyilvános URL-ek kerülnek.</string>
+    <string name="field_stream_rtmp_url">RTMP(S) szerver URL</string>
+    <string name="field_stream_rtmp_url_hint">pl. rtmp://a.rtmp.youtube.com/live2</string>
+    <string name="field_stream_key">Stream kulcs</string>
+    <string name="field_stream_key_hint">Titkos – a szerver URL végére kerül. Hagyd üresen, ha az URL már tartalmazza.</string>
+    <string name="field_stream_playback_url">Lejátszási URL (nem kötelező)</string>
+    <string name="field_stream_playback_url_hint">Közvetlenül lejátszható HLS (.m3u8) vagy MP4 link – az esemény oldalán lejátszóként jelenik meg</string>
+    <string name="field_stream_page_url">Nézői oldal (nem kötelező)</string>
+    <string name="field_stream_page_url_hint">pl. a YouTube / Twitch csatornád oldala</string>
+    <string name="field_stream_recording_url">Felvétel URL (nem kötelező)</string>
+    <string name="field_stream_recording_url_hint">Ahol a felvétel később letölthető / visszanézhető. {start} = az esemény kezdete (UTC).</string>
+    <string name="error_stream_url">Érvénytelen URL (a szerverhez rtmp:// vagy rtmps://, a többihez http(s):// kell)</string>
+    <string name="action_save_stream">Stream beállítások mentése</string>
+    <string name="stream_settings_saved">Stream beállítások elmentve ezen a telefonon</string>
 </resources>

@@ -6,8 +6,6 @@ import info.soslive.stream.BuildConfig
 object AppConfig {
     /** Web app that shows events; the event link is `<webappUrl>/e/{fileId}`. */
     val webappUrl: String = BuildConfig.WEBAPP_URL
-    val streamRtmpUrl: String = BuildConfig.STREAM_RTMP_URL
-    val streamHlsTemplate: String = BuildConfig.STREAM_HLS_TEMPLATE
     val googleWebClientId: String = BuildConfig.GOOGLE_WEB_CLIENT_ID
 
     /** Without a Google client id the app stores its "Drive" files locally (development only). */

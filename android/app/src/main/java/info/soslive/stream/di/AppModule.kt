@@ -15,7 +15,8 @@ import info.soslive.stream.drive.GoogleDriveApi
 import info.soslive.stream.drive.LocalDriveApi
 import info.soslive.stream.drive.SosliveDrive
 import info.soslive.stream.stream.StreamProvider
-import info.soslive.stream.stream.TemplateStreamProvider
+import info.soslive.stream.stream.StreamSettingsStore
+import info.soslive.stream.stream.UserStreamProvider
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
@@ -59,5 +60,5 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideStreamProvider(): StreamProvider = TemplateStreamProvider()
+    fun provideStreamProvider(store: StreamSettingsStore): StreamProvider = UserStreamProvider { store.load() }
 }
