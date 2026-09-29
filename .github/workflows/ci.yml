@@ -39,11 +39,12 @@ jobs:
       # simulator runtime, which the runner image may not have.
       - name: Build app (device, unsigned)
         run: |
-          xcodebuild build -quiet \
+          set -o pipefail
+          xcodebuild build \
             -project SOSlive.xcodeproj -scheme SOSlive \
             -destination 'generic/platform=iOS' \
             -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions
 
   android:
     runs-on: ubuntu-latest
