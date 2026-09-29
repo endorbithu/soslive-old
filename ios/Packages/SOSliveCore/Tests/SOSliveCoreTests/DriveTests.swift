@@ -96,7 +96,6 @@ final class DriveModelsTests: XCTestCase {
         XCTAssertEqual(parsed.recording, "https://h/rec.mp4")
     }
 }
-}
 
 final class SosliveDriveTests: XCTestCase {
     private var api: FakeDriveAPI!
