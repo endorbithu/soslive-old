@@ -6,13 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.soslive.stream.core.ui.UiText
-import info.soslive.stream.data.remote.toUiText
-import info.soslive.stream.domain.model.Comment
-import info.soslive.stream.domain.model.Event
-import info.soslive.stream.domain.model.Photo
-import info.soslive.stream.domain.repository.EventRepository
+import info.soslive.stream.core.ui.toUiText
+import info.soslive.stream.drive.EventDocument
+import info.soslive.stream.drive.EventSummary
+import info.soslive.stream.drive.SosliveDrive
 import info.soslive.stream.ui.navigation.EventDetailRoute
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,13 +20,14 @@ import javax.inject.Inject
 
 data class EventsUiState(
     val loading: Boolean = true,
-    val events: List<Event> = emptyList(),
+    val events: List<EventSummary> = emptyList(),
     val error: UiText? = null,
 )
 
+/** The event files in the user's SOSlive folder, newest first. */
 @HiltViewModel
 class EventsViewModel @Inject constructor(
-    private val eventRepository: EventRepository,
+    private val drive: SosliveDrive,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EventsUiState())
@@ -41,7 +40,7 @@ class EventsViewModel @Inject constructor(
     fun refresh() {
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            eventRepository.myEvents()
+            runCatching { drive.listEvents() }
                 .onSuccess { events -> _state.update { it.copy(loading = false, events = events) } }
                 .onFailure { error -> _state.update { it.copy(loading = false, error = error.toUiText()) } }
         }
@@ -50,21 +49,19 @@ class EventsViewModel @Inject constructor(
 
 data class EventDetailUiState(
     val loading: Boolean = true,
-    val event: Event? = null,
-    val comments: List<Comment> = emptyList(),
-    val photos: List<Photo> = emptyList(),
-    val draft: String = "",
-    val sending: Boolean = false,
+    val document: EventDocument? = null,
     val error: UiText? = null,
 )
 
 @HiltViewModel
 class EventDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val eventRepository: EventRepository,
+    private val drive: SosliveDrive,
 ) : ViewModel() {
 
-    val eventId: Long = savedStateHandle.toRoute<EventDetailRoute>().id
+    private val route = savedStateHandle.toRoute<EventDetailRoute>()
+    val title: String = route.title
+    val link: String = drive.link(route.fileId)
 
     private val _state = MutableStateFlow(EventDetailUiState())
     val state: StateFlow<EventDetailUiState> = _state.asStateFlow()
@@ -76,33 +73,9 @@ class EventDetailViewModel @Inject constructor(
     fun refresh() {
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            val event = async { eventRepository.event(eventId) }
-            val comments = async { eventRepository.comments(eventId) }
-            val photos = async { eventRepository.photos(eventId) }
-            val eventResult = event.await()
-            _state.update {
-                it.copy(
-                    loading = false,
-                    event = eventResult.getOrNull() ?: it.event,
-                    comments = comments.await().getOrNull()?.items ?: it.comments,
-                    photos = photos.await().getOrNull() ?: it.photos,
-                    error = eventResult.exceptionOrNull()?.toUiText(),
-                )
-            }
-        }
-    }
-
-    fun onDraftChange(value: String) = _state.update { it.copy(draft = value.take(1000)) }
-
-    fun sendComment() {
-        val text = _state.value.draft.trim()
-        if (text.isEmpty() || _state.value.sending) return
-        _state.update { it.copy(sending = true) }
-        viewModelScope.launch {
-            eventRepository.addComment(eventId, text)
-                .onSuccess { comment -> _state.update { it.copy(draft = "", comments = it.comments + comment) } }
-                .onFailure { error -> _state.update { it.copy(error = error.toUiText()) } }
-            _state.update { it.copy(sending = false) }
+            runCatching { drive.readEvent(route.fileId) }
+                .onSuccess { doc -> _state.update { it.copy(loading = false, document = doc) } }
+                .onFailure { error -> _state.update { it.copy(loading = false, error = error.toUiText()) } }
         }
     }
 }

@@ -16,61 +16,48 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.soslive.stream.domain.repository.AuthRepository
-import info.soslive.stream.ui.auth.LoginScreen
-import info.soslive.stream.ui.auth.RegisterScreen
+import info.soslive.stream.auth.AccountStore
+import info.soslive.stream.auth.GoogleAuth
+import info.soslive.stream.ui.auth.SignInScreen
 import info.soslive.stream.ui.events.EventDetailScreen
 import info.soslive.stream.ui.events.EventsScreen
-import info.soslive.stream.ui.profile.ProfileScreen
+import info.soslive.stream.ui.settings.SettingsScreen
 import info.soslive.stream.ui.stream.StreamScreen
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
-@Serializable data object LoginRoute
-@Serializable data object RegisterRoute
 @Serializable data object HomeRoute
 @Serializable data object EventsRoute
-@Serializable data class EventDetailRoute(val id: Long)
-@Serializable data object ProfileRoute
+@Serializable data class EventDetailRoute(val fileId: String, val title: String)
+@Serializable data object SettingsRoute
 
 sealed interface SessionState {
     data object Loading : SessionState
-    data object LoggedOut : SessionState
-    data class LoggedIn(val userId: Long) : SessionState
+    data object SignedOut : SessionState
+    data class SignedIn(val email: String) : SessionState
 }
 
 @HiltViewModel
-class AppViewModel @Inject constructor(authRepository: AuthRepository) : ViewModel() {
-    val session: StateFlow<SessionState> = authRepository.currentUser
-        .map { user -> if (user == null) SessionState.LoggedOut else SessionState.LoggedIn(user.id) }
+class AppViewModel @Inject constructor(accountStore: AccountStore, googleAuth: GoogleAuth) : ViewModel() {
+    val session: StateFlow<SessionState> = accountStore.account
+        .onEach { googleAuth.accountEmail = it?.email } // the Drive token is requested for this account
+        .map { account -> if (account == null) SessionState.SignedOut else SessionState.SignedIn(account.email) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, SessionState.Loading)
 }
 
-/**
- * Root: the session decides which graph is shown. Logging in/out (or a rejected refresh token)
- * swaps the whole NavHost, so no screen has to navigate "to login" itself.
- */
+/** The stored account decides what is shown: Google sign-in or the main screens. */
 @Composable
 fun SosLiveApp(viewModel: AppViewModel = hiltViewModel()) {
     val session by viewModel.session.collectAsStateWithLifecycle()
     when (val s = session) {
         SessionState.Loading -> Box(Modifier.fillMaxSize()) { CircularProgressIndicator(Modifier.align(Alignment.Center)) }
-        SessionState.LoggedOut -> AuthNavHost()
-        // Keyed by user: another account gets a fresh back stack and fresh ViewModels.
-        is SessionState.LoggedIn -> key(s.userId) { MainNavHost() }
-    }
-}
-
-@Composable
-private fun AuthNavHost() {
-    val navController = rememberNavController()
-    NavHost(navController, startDestination = LoginRoute) {
-        composable<LoginRoute> { LoginScreen(onRegister = { navController.navigate(RegisterRoute) }) }
-        composable<RegisterRoute> { RegisterScreen(onBack = { navController.popBackStack() }) }
+        SessionState.SignedOut -> SignInScreen()
+        is SessionState.SignedIn -> key(s.email) { MainNavHost() }
     }
 }
 
@@ -81,16 +68,16 @@ private fun MainNavHost() {
         composable<HomeRoute> {
             StreamScreen(
                 onOpenEvents = { navController.navigate(EventsRoute) },
-                onOpenProfile = { navController.navigate(ProfileRoute) },
+                onOpenSettings = { navController.navigate(SettingsRoute) },
             )
         }
         composable<EventsRoute> {
             EventsScreen(
                 onBack = { navController.popBackStack() },
-                onOpenEvent = { id -> navController.navigate(EventDetailRoute(id)) },
+                onOpenEvent = { fileId, title -> navController.navigate(EventDetailRoute(fileId, title)) },
             )
         }
         composable<EventDetailRoute> { EventDetailScreen(onBack = { navController.popBackStack() }) }
-        composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
+        composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
     }
 }

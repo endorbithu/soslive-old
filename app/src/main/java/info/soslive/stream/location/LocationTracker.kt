@@ -16,7 +16,6 @@ import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.soslive.stream.core.config.AppConfig
-import info.soslive.stream.domain.model.GeoPoint
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,6 +25,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class GeoPoint(val lat: Double, val lng: Double, val accuracy: Float? = null)
+
 /** Wraps the fused location provider. All calls are no-ops without location permission. */
 @Singleton
 class LocationTracker @Inject constructor(
@@ -33,7 +34,7 @@ class LocationTracker @Inject constructor(
 ) {
     private val client = LocationServices.getFusedLocationProviderClient(context)
 
-    private val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, AppConfig.LOCATION_UPDATE_INTERVAL_MILLIS)
+    private val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, AppConfig.POSITION_INTERVAL_MILLIS)
         .setMinUpdateIntervalMillis(5_000)
         .build()
 

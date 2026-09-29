@@ -1,43 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_with_event">SOSlive – #%1$d</string>
-
-    <!-- Auth -->
+    <!-- Sign in -->
+    <string name="drive_explain_title">Az adataid a saját Google Drive-odon maradnak</string>
+    <string name="drive_explain_body">A SOSlive az eseményeidet (helyadat, képek, stream link, saját üzeneteid) és a beállításaidat fájlként egy \"SOSlive\" mappába menti a saját Google Drive-odon. Az app csak az általa létrehozott fájlokhoz fér hozzá. Enélkül az engedély nélkül nem tud eseményt rögzíteni.</string>
+    <string name="drive_denied">Nem adtál hozzáférést a Google Drive-hoz. Enélkül a SOSlive nem tud eseményt rögzíteni.</string>
+    <string name="action_sign_in_google">Belépés Google-lel</string>
+    <string name="action_allow_drive">Google Drive hozzáférés engedélyezése</string>
+    <string name="action_sign_in_simulated">Belépés (szimulált Drive)</string>
+    <string name="simulated_hint">Fejlesztői mód: nincs Google kliens azonosító beállítva, a fájlok csak ezen az eszközön vannak, és a linkeket más nem tudja megnyitni.</string>
     <string name="field_email">E-mail</string>
-    <string name="field_password">Jelszó</string>
     <string name="field_display_name">Név</string>
-    <string name="action_login">Bejelentkezés</string>
-    <string name="action_register">Regisztráció</string>
-    <string name="action_go_register">Még nincs fiókod? Regisztrálj</string>
-    <string name="action_go_login">Van már fiókod? Jelentkezz be</string>
-    <string name="or_continue_with">vagy folytasd ezzel</string>
-    <string name="action_google">Google</string>
-    <string name="action_facebook">Facebook</string>
-    <string name="sso_simulated_suffix">(szimulált)</string>
-    <string name="sso_simulated_title">Szimulált %1$s bejelentkezés</string>
-    <string name="sso_simulated_body">Ehhez a szolgáltatóhoz nincs kliens azonosító beállítva, ezért a bejelentkezés szimulált: a backend úgy fogadja el az alábbi e-mail címet, mintha a szolgáltatótól jönne.</string>
+    <string name="action_continue">Tovább</string>
+    <string name="action_cancel">Mégse</string>
+    <string name="error_sign_in">Sikertelen belépés: %1$s</string>
 
     <!-- Main screen -->
-    <string name="menu_my_events">Beküldött eseményeim</string>
-    <string name="menu_profile">Profil</string>
+    <string name="menu_my_events">Eseményeim</string>
+    <string name="menu_settings">Beállítások</string>
     <string name="menu_new_incident">Új esemény</string>
     <string name="action_sos">SOS</string>
     <string name="action_live">Élő videó indítása</string>
     <string name="action_photo">Fénykép</string>
     <string name="action_add_photo">Fénykép hozzáadása az eseményhez</string>
     <string name="action_stop">Leállítás</string>
-    <string name="action_cancel">Mégse</string>
     <string name="action_grant">Engedély megadása</string>
     <string name="action_switch_camera">Kameraváltás</string>
     <string name="action_flash">Vaku ki/be</string>
     <string name="action_send">Küldés</string>
     <string name="action_back">Vissza</string>
-    <string name="action_save">Mentés</string>
-    <string name="action_logout">Kijelentkezés</string>
     <string name="action_refresh">Frissítés</string>
+    <string name="action_share_link">Link megosztása</string>
     <string name="action_open_web">Megnyitás weben</string>
     <string name="stop_confirm_title">Leállítod a streamet?</string>
-    <string name="logout_confirm">Kijelentkezel?</string>
     <string name="permission_camera_needed">A streameléshez kamera és mikrofon engedély szükséges.</string>
     <string name="flash_unavailable">Ennél a kameránál nincs vaku</string>
 
@@ -48,58 +42,53 @@
     <string name="stream_stopped">Stream leállítva</string>
     <string name="stream_reconnecting">Kapcsolat megszakadt, újrakapcsolódás (%1$d/%2$d)…</string>
     <string name="stream_failed">A streamelés sikertelen: %1$s</string>
-    <string name="stream_no_target">A szerver nem adott stream célt (ellenőrizd a backend RTMP_URL beállítását)</string>
     <string name="stream_encoder_error">Ezen az eszközön nem indítható a videó/hang kódoló</string>
 
-    <string name="sos_default_message">SOS! Segítségre van szükségem. Élő videó és helyadat:</string>
-    <string name="sos_no_contacts">Nincs SOS telefonszám beállítva – add meg a profilodban</string>
-    <string name="sos_sms_sent">SOS SMS elküldve %1$d címzettnek</string>
-    <string name="sos_sms_no_app">Nem található SMS alkalmazás</string>
+    <string name="share_failed">Az esemény linkjét nem sikerült nyilvánossá tenni (%1$s) – mások nem fogják tudni megnyitni.</string>
+    <string name="notify_no_contacts">Nincs kit értesíteni – adj meg telefonszámot vagy e-mail címet a Beállításokban</string>
+    <string name="notify_text">SOS! Segítségre van szükségem. Élő videó és helyadat: %1$s (SMS-ben válaszolhatsz erre a számra.)</string>
+    <string name="notify_subject">SOSlive – segítségre van szükségem</string>
+    <string name="sms_sent">Link elküldve SMS-ben %1$d címzettnek</string>
+    <string name="composer_no_app">Nem található SMS / e-mail alkalmazás</string>
+    <string name="mute_tip">Tipp: némítsd le a telefont – egy bejövő válasz hangja elárulhat.</string>
 
-    <string name="photo_uploaded">Sikeres feltöltés!</string>
+    <string name="photo_uploaded">Fénykép hozzáadva az eseményhez</string>
     <string name="photo_no_camera_app">Nem található kamera alkalmazás</string>
 
-    <string name="comments_title">Hozzászólások (%1$d)</string>
-    <string name="comments_empty">Még nincs hozzászólás</string>
-    <string name="comment_hint">Írj hozzászólást…</string>
-
-    <!-- Profile -->
-    <string name="profile_providers">Bejelentkezési módok: %1$s</string>
-    <string name="profile_sos_section">SOS beállítások</string>
-    <string name="field_sos_contacts">SOS telefonszámok</string>
-    <string name="field_sos_contacts_hint">Nemzetközi formátum, soronként egy, pl. +36301234567</string>
-    <string name="field_sos_message">SOS üzenet</string>
-    <string name="field_sos_message_hint">Az esemény élő linkje a végére kerül</string>
-    <string name="profile_saved">Mentve</string>
+    <string name="messages_title">Üzeneteim (%1$d)</string>
+    <string name="message_hint">Üzenet az esemény oldalára…</string>
+    <string name="entries_empty">Még nincs semmi</string>
+    <string name="entry_position">%1$s – pozíció %2$.5f, %3$.5f</string>
+    <string name="entry_image">%1$s – fénykép</string>
 
     <!-- Events -->
     <string name="events_empty">Még nincs eseményed</string>
-    <string name="event_started">Kezdete: %1$s</string>
-    <string name="event_stopped">Vége: %1$s</string>
-    <string name="event_location">Utolsó helyadat: %1$.5f, %2$.5f</string>
-    <string name="event_no_location">Nincs helyadat</string>
-    <string name="event_photos">Fényképek: %1$d</string>
-    <string name="status_live">Élő</string>
-    <string name="status_open">Nyitott</string>
-    <string name="status_stopped">Lezárt</string>
-    <string name="status_unknown">Ismeretlen</string>
-    <string name="type_sos">SOS</string>
-    <string name="type_live">Élő videó</string>
-    <string name="type_photo">Fénykép</string>
+    <string name="utc_hint">Kezdés időpontja (UTC)</string>
+    <string name="event_stream">Stream: %1$s</string>
+    <string name="event_no_stream">Nincs stream</string>
+
+    <!-- Settings -->
+    <string name="settings_notify_section">Kik kapják meg a linket</string>
+    <string name="field_notification_phones">Telefonszámok (SMS)</string>
+    <string name="field_notification_phones_hint">Nemzetközi formátum, soronként egy, pl. +36 30 123 4567</string>
+    <string name="field_notification_emails">E-mail címek</string>
+    <string name="field_notification_emails_hint">Soronként egy</string>
+    <string name="field_max_events">Megtartott események száma</string>
+    <string name="field_max_events_hint">A régebbi események a Drive kukájába kerülnek (30 napig visszaállíthatók)</string>
+    <string name="settings_web_note">Ezek a beállítások a Drive-odon, a config.json fájlban vannak; a weboldal csak megmutatja őket.</string>
+    <string name="action_save">Mentés</string>
+    <string name="settings_saved">Mentve a Google Drive-ra</string>
+    <string name="action_logout">Kijelentkezés</string>
+    <string name="logout_confirm">Kijelentkezel?</string>
+    <string name="logout_note">Az eseményeid és beállításaid a Google Drive-odon maradnak.</string>
+    <string name="error_emails_invalid">Érvénytelen e-mail cím(ek): %1$s</string>
+    <string name="error_phones_invalid">Érvénytelen telefonszám(ok): %1$s</string>
+    <string name="error_max_events">Legalább 1-et adj meg</string>
 
     <!-- Errors -->
     <string name="error_generic">Hiba történt</string>
-    <string name="error_network">Nincs netkapcsolat, vagy a szerver nem érhető el</string>
-    <string name="error_invalid_credentials">Hibás e-mail vagy jelszó</string>
-    <string name="error_too_many_attempts">Túl sok sikertelen próbálkozás, várj 15 percet</string>
-    <string name="error_email_taken">Ezzel az e-mail címmel már van fiók</string>
-    <string name="error_sso_rejected">A bejelentkezési szolgáltató tokenjét a szerver elutasította</string>
-    <string name="error_sso_failed">Sikertelen bejelentkezés: %1$s</string>
-    <string name="error_email_required">Az e-mail kötelező</string>
-    <string name="error_email_invalid">Érvénytelen e-mail cím</string>
-    <string name="error_password_required">A jelszó kötelező</string>
-    <string name="error_password_short">Legalább %1$d karakter</string>
-    <string name="error_name_required">A név kötelező</string>
-    <string name="error_phone_invalid">Érvénytelen telefonszám(ok): %1$s</string>
-    <string name="error_phone_too_many">Legfeljebb %1$d telefonszám</string>
+    <string name="error_network">Nincs netkapcsolat</string>
+    <string name="error_drive">Google Drive hiba: %1$s</string>
+    <string name="error_drive_missing">Az esemény fájlját törölték a Drive-ról – az írás leállt.</string>
+    <string name="error_drive_permission">Google Drive hozzáférés szükséges – jelentkezz ki, majd be, és engedélyezd.</string>
 </resources>

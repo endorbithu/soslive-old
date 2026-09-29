@@ -16,7 +16,7 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
 
-    <!-- Package visibility (Android 11+): open the SMS app and the camera app -->
+    <!-- Package visibility (Android 11+): SMS app, e-mail app and camera app -->
     <queries>
         <intent>
             <action android:name="android.intent.action.SENDTO" />
@@ -25,6 +25,10 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
     </queries>
 
     <application
@@ -32,7 +36,6 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.SOSlive"
         tools:targetApi="35">
@@ -59,23 +62,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Facebook SDK: initialised manually in SosLiveApplication only when an app id is configured. -->
-        <provider
-            android:name="com.facebook.internal.FacebookInitProvider"
-            android:authorities="${applicationId}.FacebookInitProvider"
-            tools:node="remove" />
-
-        <activity
-            android:name="com.facebook.CustomTabActivity"
-            android:exported="true"
-            tools:ignore="AppLinkUrlError">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="${facebookLoginScheme}" />
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>

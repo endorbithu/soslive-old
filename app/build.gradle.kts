@@ -11,9 +11,9 @@ plugins {
 
 /**
  * App configuration. Every value is optional; read from (first match wins):
- *   1. -P gradle property      e.g. ./gradlew assembleDebug -Psoslive.apiBaseUrl=http://192.168.1.10:3000/
- *   2. local.properties        e.g. soslive.apiBaseUrl=http://192.168.1.10:3000/
- * The RTMP target itself comes from the backend (mock-server/.env -> RTMP_URL).
+ *   1. -P gradle property      e.g. ./gradlew assembleDebug -Psoslive.streamRtmpUrl=rtmp://192.168.1.10:1935/live
+ *   2. local.properties        e.g. soslive.streamRtmpUrl=rtmp://192.168.1.10:1935/live
+ * There is no SOSlive backend: data goes to the user's Google Drive, video to the stream server.
  */
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
@@ -25,10 +25,13 @@ fun appConfig(key: String, default: String = ""): String =
 
 fun String.asBuildConfigString() = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
-val apiBaseUrl = appConfig("soslive.apiBaseUrl", "http://10.0.2.2:3000/").let { if (it.endsWith("/")) it else "$it/" }
+// Web app that shows events: links are <webappUrl>/e/{fileId}
+val webappUrl = appConfig("soslive.webappUrl", "https://soslive.example").trimEnd('/')
+// RTMP ingest (stream key is appended) and HLS playback template ({key} is replaced)
+val streamRtmpUrl = appConfig("soslive.streamRtmpUrl", "rtmp://10.0.2.2:1935/live").trimEnd('/')
+val streamHlsTemplate = appConfig("soslive.streamHlsTemplate", "http://10.0.2.2:8888/live/{key}/index.m3u8")
+// Google Cloud *Web* OAuth client id (same project as the web app). Empty = simulated Drive.
 val googleWebClientId = appConfig("soslive.googleWebClientId")
-val facebookAppId = appConfig("soslive.facebookAppId")
-val facebookClientToken = appConfig("soslive.facebookClientToken")
 
 android {
     namespace = "info.soslive.stream"
@@ -43,19 +46,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", apiBaseUrl.asBuildConfigString())
+        buildConfigField("String", "WEBAPP_URL", webappUrl.asBuildConfigString())
+        buildConfigField("String", "STREAM_RTMP_URL", streamRtmpUrl.asBuildConfigString())
+        buildConfigField("String", "STREAM_HLS_TEMPLATE", streamHlsTemplate.asBuildConfigString())
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId.asBuildConfigString())
-        buildConfigField("String", "FACEBOOK_APP_ID", facebookAppId.asBuildConfigString())
-        buildConfigField("String", "FACEBOOK_CLIENT_TOKEN", facebookClientToken.asBuildConfigString())
-
-        // Facebook's login redirect (Custom Tab) scheme; a harmless dummy when Facebook is not configured.
-        manifestPlaceholders["facebookLoginScheme"] =
-            if (facebookAppId.isNotEmpty()) "fb$facebookAppId" else "fbnotconfigured"
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
+            // No applicationIdSuffix: the Android OAuth client is bound to the package name.
             versionNameSuffix = "-debug"
         }
         release {
@@ -111,8 +110,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
@@ -120,7 +117,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
-    implementation(libs.facebook.login)
+    implementation(libs.play.services.auth)
 
     implementation(libs.rootencoder.library)
 

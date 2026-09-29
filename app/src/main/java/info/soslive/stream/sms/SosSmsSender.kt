@@ -11,12 +11,15 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.soslive.stream.R
+import info.soslive.stream.drive.ContactRules
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Sends the SOS text to the user's emergency contacts. Uses SmsManager directly when SEND_SMS is
- * granted, otherwise the UI opens the SMS app pre-filled via [composeIntent].
+ * Sends the event link to the contacts in config.json from the phone itself (there is no backend
+ * to do it). SMS goes out directly when SEND_SMS is granted, otherwise (and for e-mail) the UI
+ * opens a pre-filled composer and the user taps Send. Replies arrive as normal SMS on the phone;
+ * the app never reads SMS.
  */
 @Singleton
 class SosSmsSender @Inject constructor(
@@ -27,7 +30,7 @@ class SosSmsSender @Inject constructor(
             ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
 
     /** @return how many recipients the message was handed to. */
-    fun sendDirect(numbers: List<String>, text: String): Int {
+    fun sendDirect(phones: List<String>, text: String): Int {
         val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             context.getSystemService(SmsManager::class.java)
         } else {
@@ -35,29 +38,35 @@ class SosSmsSender @Inject constructor(
             SmsManager.getDefault()
         } ?: return 0
         var sent = 0
-        for (number in numbers) {
+        for (phone in phones) {
             try {
-                smsManager.sendMultipartTextMessage(number, null, smsManager.divideMessage(text), null, null)
+                smsManager.sendMultipartTextMessage(ContactRules.dialable(phone), null, smsManager.divideMessage(text), null, null)
                 sent++
             } catch (e: Exception) {
-                Log.w(TAG, "SMS to $number failed", e)
+                Log.w(TAG, "SMS failed", e)
             }
         }
         return sent
     }
 
-    fun buildMessage(template: String, shareUrl: String): String =
-        buildMessage(template, context.getString(R.string.sos_default_message), shareUrl)
+    /** SMS / e-mail text with the event link (no personal data besides the link). */
+    fun sosText(link: String): String = context.getString(R.string.notify_text, link)
+
+    fun sosSubject(): String = context.getString(R.string.notify_subject)
 
     companion object {
         private const val TAG = "SosSmsSender"
 
-        /** Opens the default SMS app pre-filled (fallback when SEND_SMS is not granted). */
-        fun composeIntent(numbers: List<String>, text: String): Intent =
-            Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + numbers.joinToString(";")))
+        /** Pre-filled SMS composer. */
+        fun smsIntent(phones: List<String>, text: String): Intent =
+            Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + phones.joinToString(";") { ContactRules.dialable(it) }))
                 .putExtra("sms_body", text)
 
-        fun buildMessage(template: String, fallback: String, shareUrl: String): String =
-            "${template.ifBlank { fallback }.trim()} - $shareUrl"
+        /** Pre-filled e-mail composer. */
+        fun emailIntent(emails: List<String>, subject: String, text: String): Intent =
+            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+                .putExtra(Intent.EXTRA_EMAIL, emails.toTypedArray())
+                .putExtra(Intent.EXTRA_SUBJECT, subject)
+                .putExtra(Intent.EXTRA_TEXT, text)
     }
 }

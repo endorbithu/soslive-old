@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
@@ -71,8 +71,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import info.soslive.stream.R
-import info.soslive.stream.domain.model.EventType
-import info.soslive.stream.sms.SosSmsSender
+import info.soslive.stream.auth.EventType
 import info.soslive.stream.stream.StreamController
 import kotlinx.coroutines.launch
 import java.io.File
@@ -91,7 +90,7 @@ private fun Context.isGranted(permission: String) =
 @Composable
 fun StreamScreen(
     onOpenEvents: () -> Unit,
-    onOpenProfile: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: StreamViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -130,7 +129,7 @@ fun StreamScreen(
 
     // ---- photo capture (system camera app)
     var pendingPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
-    var pendingPhotoEventId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var pendingPhotoEventId by rememberSaveable { mutableStateOf<String?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val file = pendingPhotoPath?.let(::File)
         val eventId = pendingPhotoEventId
@@ -151,16 +150,17 @@ fun StreamScreen(
                     controller?.stopStream()
                     flashOn = false
                 }
-                is StreamEffect.OpenSmsApp -> try {
-                    context.startActivity(SosSmsSender.composeIntent(effect.numbers, effect.text))
+                is StreamEffect.OpenComposers -> try {
+                    // startActivities: the last intent (SMS) is on top, e-mail comes after it.
+                    context.startActivities(effect.intents.toTypedArray())
                 } catch (_: ActivityNotFoundException) {
-                    snackbar.showSnackbar(context.getString(R.string.sos_sms_no_app))
+                    snackbar.showSnackbar(context.getString(R.string.composer_no_app))
                 }
                 is StreamEffect.TakePhoto -> {
                     val dir = File(context.cacheDir, "photos").apply { mkdirs() }
-                    val file = File.createTempFile("incident_${effect.eventId}_", ".jpg", dir)
+                    val file = File.createTempFile("incident_", ".jpg", dir)
                     pendingPhotoPath = file.absolutePath
-                    pendingPhotoEventId = effect.eventId
+                    pendingPhotoEventId = effect.eventFileId
                     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                     try {
                         takePicture.launch(uri)
@@ -185,15 +185,14 @@ fun StreamScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val id = state.liveEventId ?: state.activeEvent?.id
-                    Text(if (id != null) stringResource(R.string.title_with_event, id) else stringResource(R.string.app_name))
+                    Text(state.activeEvent?.title ?: stringResource(R.string.app_name), maxLines = 1)
                 },
                 actions = {
                     IconButton(onClick = onOpenEvents) {
                         Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.menu_my_events))
                     }
-                    IconButton(onClick = onOpenProfile) {
-                        Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.menu_profile))
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.menu_settings))
                     }
                     Box {
                         IconButton(onClick = { menuOpen = true }) {
@@ -229,15 +228,16 @@ fun StreamScreen(
             Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(8.dp)) {
                 LiveBadge(state.phase)
                 if (state.activeEvent != null) {
-                    CommentsPanel(
-                        comments = state.comments,
-                        unread = state.unreadComments,
-                        expanded = state.commentsExpanded,
-                        draft = state.commentDraft,
-                        sending = state.sendingComment,
-                        onToggle = viewModel::toggleComments,
-                        onDraftChange = viewModel::onCommentDraftChange,
-                        onSend = viewModel::sendComment,
+                    val active = state.activeEvent!!
+                    MessagesPanel(
+                        link = active.link,
+                        messages = state.messages,
+                        expanded = state.messagesExpanded,
+                        draft = state.messageDraft,
+                        sending = state.sendingMessage,
+                        onToggle = viewModel::toggleMessages,
+                        onDraftChange = viewModel::onMessageDraftChange,
+                        onSend = viewModel::sendMessage,
                     )
                 }
             }
