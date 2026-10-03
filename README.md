@@ -15,7 +15,7 @@ A műszaki szerződés: „SOSlive mobil app – átállási útmutató” és a
 |---|---|
 | `android/` | Új Android app (Kotlin, Jetpack Compose) – önálló Gradle projekt |
 | `ios/` | Új iOS app (SwiftUI) – XcodeGen projekt + `SOSliveCore` Swift csomag |
-| `legacy/` | A régi (2017–2019-es) Java Android app változatlanul, csak referenciának |
+| `legacy/` | A régi Java Android app, csak archívum – az új appok semmilyen kapcsolatban nincsenek vele |
 | `docker-compose.yml` | Opcionális helyi RTMP/HLS szerver (MediaMTX) fejlesztéshez |
 
 ## Hogyan működik
@@ -33,7 +33,7 @@ mobil app ──(Google token, drive.file)──► user Google Drive-ja
 - **SOSlive mappa:** belépéskor megkeresi (`appProperties {"soslive":"root"}`), ha nincs,
   létrehozza; több találatnál a legrégebbi az érvényes.
 - **config.json:** értesítendő e-mailek / telefonszámok, `max_events`; csak az app írja,
-  ismeretlen mezőket megőriz. Első belépéskor a régi Java app SMS-számai átkerülnek bele.
+  ismeretlen mezőket megőriz.
 - **Esemény:** fájlnév a kezdés ideje UTC-ben, tartalom
   `{"v":1,"stream":"…","stream_page":"…","recording":"…","entries":[…]}`
   (`pos` / `msg` / `img`). Létrehozás után „anyone with the link” megosztás, a link
@@ -147,7 +147,7 @@ ios/
 - Automatikus (háttér) értesítés kell-e, vagy elég a kitöltött SMS / e-mail?
 - Képek tárhelye: most Drive + nyilvános megosztás (`drive.google.com/thumbnail`), ami nem
   minden esetben jelenik meg megbízhatóan.
-- Régi események / linkek átvitele; végleges web cím.
+- Végleges web cím.
 - Céges (Workspace) fiókoknál az „anyone with link” megosztás tiltva lehet – az app jelzi.
 
 ### Ismert korlátok

@@ -15,7 +15,6 @@ import info.soslive.stream.auth.UserAccount
 import info.soslive.stream.core.config.AppConfig
 import info.soslive.stream.core.ui.UiText
 import info.soslive.stream.core.ui.toUiText
-import info.soslive.stream.drive.LegacySettings
 import info.soslive.stream.drive.SosliveDrive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +41,6 @@ class SignInViewModel @Inject constructor(
     private val googleAuth: GoogleAuth,
     private val accountStore: AccountStore,
     private val drive: SosliveDrive,
-    private val legacy: LegacySettings,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignInUiState())
@@ -102,13 +100,12 @@ class SignInViewModel @Inject constructor(
         viewModelScope.launch { finish(UserAccount(email.trim(), name.trim().ifEmpty { email.substringBefore('@') }, simulated = true)) }
     }
 
-    /** Prepares the SOSlive folder, migrates legacy settings once, then stores the account. */
+    /** Prepares the SOSlive folder and reads config.json, then stores the account. */
     private suspend fun finish(account: UserAccount) {
         try {
             drive.forgetLocalState()
             drive.folderId()
-            val remote = drive.readRemoteConfig()
-            if (remote == null) legacy.toConfig()?.let { drive.saveConfig(it) }
+            drive.readRemoteConfig()
             accountStore.setAccount(account)
         } catch (e: Exception) {
             _state.update { it.copy(busy = false, error = e.toUiText()) }

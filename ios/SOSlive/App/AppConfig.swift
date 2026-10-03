@@ -14,7 +14,7 @@ enum AppConfig {
 
     static let driveFileScope = "https://www.googleapis.com/auth/drive.file"
 
-    /// A photo incident stays open this long for extra photos / messages (legacy: 2 hours).
+    /// A photo incident stays open this long for extra photos / messages.
     static let activeEventWindow: TimeInterval = 2 * 60 * 60
     static let streamMaxRetries = 3
     static let streamRetryDelay: UInt64 = 3_000_000_000

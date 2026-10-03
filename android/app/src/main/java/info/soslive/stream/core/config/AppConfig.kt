@@ -13,7 +13,7 @@ object AppConfig {
 
     const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
-    /** A photo incident stays open this long, so more photos / messages go to the same event (legacy: 2 hours). */
+    /** A photo incident stays open this long, so more photos / messages go to the same event. */
     const val ACTIVE_EVENT_WINDOW_MILLIS: Long = 2 * 60 * 60 * 1000L
 
     /** Position entries at most this often (per the event format guide). */

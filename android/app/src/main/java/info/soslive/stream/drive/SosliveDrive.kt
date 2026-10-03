@@ -25,7 +25,7 @@ interface DriveCache {
 
 /**
  * The SOSlive folder on the user's Drive: config.json and one JSON file per event.
- * Follows the migration guide: the oldest "SOSlive" folder wins, config.json is private,
+ * Follows the mobile app spec: the oldest "SOSlive" folder wins, config.json is private,
  * event files are shared "anyone with the link", old events are rotated to the trash.
  */
 class SosliveDrive(

@@ -168,7 +168,7 @@ public struct EventDocument {
     }
 }
 
-/// Validation rules of config.json (see the migration guide).
+/// Validation rules of config.json (see the mobile app spec).
 public enum ContactRules {
     public static func isValidEmail(_ value: String) -> Bool {
         value.count <= 128 && value.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil

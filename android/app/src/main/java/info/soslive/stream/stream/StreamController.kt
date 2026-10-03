@@ -11,8 +11,7 @@ import com.pedro.library.rtmp.RtmpCamera2
 import com.pedro.library.view.OpenGlView
 
 /**
- * Camera preview + RTMP publishing (RootEncoder). Replaces the legacy yasea/x264 native encoder:
- * hardware H.264/AAC via MediaCodec, Camera2 API.
+ * Camera preview + RTMP publishing (RootEncoder). Hardware H.264/AAC via MediaCodec, Camera2 API.
  *
  * Lives as long as its [view] (the UI owns it); reports connection changes to [listener] on the main thread.
  */
