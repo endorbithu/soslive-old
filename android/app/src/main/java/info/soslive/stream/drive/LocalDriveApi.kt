@@ -30,7 +30,11 @@ class LocalDriveApi(
         val createdMillis: Long,
         val trashed: Boolean = false,
         val shared: Boolean = false,
+        val viewers: List<Viewer> = emptyList(),
     )
+
+    @Serializable
+    private data class Viewer(val id: String, val email: String)
 
     private val mutex = Mutex()
     private val indexFile get() = File(root, "index.json")
@@ -62,8 +66,9 @@ class LocalDriveApi(
 
     override suspend fun getFile(id: String) = locked { index -> index.firstOrNull { it.id == id }?.toFile() }
 
-    override suspend fun createFolder(name: String, tag: String) = locked { index ->
-        val meta = Meta(UUID.randomUUID().toString(), name, tag, null, folder = true, createdMillis = clock.millis())
+    override suspend fun createFolder(name: String, tag: String, parentId: String?) = locked { index ->
+        parentId?.let { index.require(it) }
+        val meta = Meta(UUID.randomUUID().toString(), name, tag, parentId, folder = true, createdMillis = clock.millis())
         index += meta
         writeIndex(index)
         meta.toFile()
@@ -99,6 +104,34 @@ class LocalDriveApi(
         val position = index.indexOfFirst { it.id == id }
         if (position < 0) throw DriveNotFoundException("File not found: $id")
         index[position] = index[position].copy(trashed = true)
+        writeIndex(index)
+    }
+
+    override suspend fun moveFile(id: String, fromParentId: String, toParentId: String) = locked { index ->
+        index.require(toParentId)
+        val position = index.indexOfFirst { it.id == id }
+        if (position < 0) throw DriveNotFoundException("File not found: $id")
+        index[position] = index[position].copy(parentId = toParentId)
+        writeIndex(index)
+    }
+
+    // Simulated: nobody is actually notified or given access.
+    override suspend fun listUserPermissions(id: String) = locked { index ->
+        index.require(id).viewers.map { DrivePermission(it.id, it.email) }
+    }
+
+    override suspend fun shareWithUser(id: String, email: String) = locked { index ->
+        val meta = index.require(id)
+        val viewer = Viewer(UUID.randomUUID().toString(), email)
+        index[index.indexOf(meta)] = meta.copy(viewers = meta.viewers + viewer)
+        writeIndex(index)
+        DrivePermission(viewer.id, email)
+    }
+
+    override suspend fun removePermission(id: String, permissionId: String) = locked { index ->
+        val meta = index.require(id)
+        if (meta.viewers.none { it.id == permissionId }) throw DriveNotFoundException("Permission not found: $permissionId")
+        index[index.indexOf(meta)] = meta.copy(viewers = meta.viewers.filterNot { it.id == permissionId })
         writeIndex(index)
     }
 

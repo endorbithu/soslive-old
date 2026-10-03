@@ -66,10 +66,11 @@ class GoogleDriveApi(
         null
     }
 
-    override suspend fun createFolder(name: String, tag: String): DriveFile {
+    override suspend fun createFolder(name: String, tag: String, parentId: String?): DriveFile {
         val metadata = buildJsonObject {
             put("name", JsonPrimitive(name))
             put("mimeType", JsonPrimitive(FOLDER_MIME))
+            if (parentId != null) put("parents", JsonArray(listOf(JsonPrimitive(parentId))))
             put("appProperties", buildJsonObject { put("soslive", JsonPrimitive(tag)) })
         }
         val url = api.newBuilder().addPathSegment("files").addQueryParameter("fields", FILE_FIELDS).build()
@@ -120,6 +121,58 @@ class GoogleDriveApi(
         val url = api.newBuilder().addPathSegment("files").addPathSegment(id).addQueryParameter("fields", "id").build()
         execute { Request.Builder().url(url).patch(buildJsonObject { put("trashed", JsonPrimitive(true)) }.toBody()) }
     }
+
+    override suspend fun moveFile(id: String, fromParentId: String, toParentId: String) {
+        val url = api.newBuilder().addPathSegment("files").addPathSegment(id)
+            .addQueryParameter("addParents", toParentId)
+            .addQueryParameter("removeParents", fromParentId)
+            .addQueryParameter("fields", "id").build()
+        execute { Request.Builder().url(url).patch(JsonObject(emptyMap()).toBody()) }
+    }
+
+    override suspend fun listUserPermissions(id: String): List<DrivePermission> {
+        val result = mutableListOf<DrivePermission>()
+        var pageToken: String? = null
+        do {
+            val url = permissions(id)
+                .addQueryParameter("fields", "nextPageToken,permissions(id,type,role,emailAddress,displayName)")
+                .addQueryParameter("pageSize", "100")
+                .apply { pageToken?.let { addQueryParameter("pageToken", it) } }
+                .build()
+            val body = json(execute { Request.Builder().url(url).get() })
+            (body["permissions"] as? JsonArray)?.forEach { element ->
+                val p = element as JsonObject
+                if (p.string("type") == "user" && p.string("role") != "owner") result += p.toPermission()
+            }
+            pageToken = body.string("nextPageToken")
+        } while (pageToken != null)
+        return result
+    }
+
+    override suspend fun shareWithUser(id: String, email: String): DrivePermission {
+        val url = permissions(id)
+            .addQueryParameter("sendNotificationEmail", "true")
+            .addQueryParameter("fields", "id,emailAddress,displayName").build()
+        val body = buildJsonObject {
+            put("type", JsonPrimitive("user"))
+            put("role", JsonPrimitive("reader"))
+            put("emailAddress", JsonPrimitive(email))
+        }
+        val created = json(execute { Request.Builder().url(url).post(body.toBody()) })
+        return created.toPermission().let { if (it.email.isEmpty()) it.copy(email = email) else it }
+    }
+
+    override suspend fun removePermission(id: String, permissionId: String) {
+        val url = permissions(id).addPathSegment(permissionId).build()
+        execute { Request.Builder().url(url).delete() }
+    }
+
+    private fun permissions(id: String) = api.newBuilder().addPathSegment("files").addPathSegment(id).addPathSegment("permissions")
+
+    private fun JsonObject.string(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+
+    private fun JsonObject.toPermission() =
+        DrivePermission(id = string("id").orEmpty(), email = string("emailAddress").orEmpty(), displayName = string("displayName").orEmpty())
 
     // --- plumbing ---
 

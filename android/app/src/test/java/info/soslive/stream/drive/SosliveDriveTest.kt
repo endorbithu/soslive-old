@@ -33,7 +33,7 @@ class SosliveDriveTest {
     }
 
     @Test
-    fun `event is created in the folder, shared and linked`() = runTest {
+    fun `event is created in the events folder, shared and linked`() = runTest {
         val start = Instant.parse("2026-09-29T14:03:22Z")
         val created = drive.createEvent(start, EventDocument(stream = "https://s/x.m3u8"))
         assertEquals("2026-09-29 14:03:22.json", created.name)
@@ -42,7 +42,11 @@ class SosliveDriveTest {
         val item = api.item(created.fileId)
         assertTrue(item.shared)
         assertEquals(DriveTags.EVENT, item.tag)
-        assertEquals(cache.folder, item.parentId)
+        val events = api.item(item.parentId!!)
+        assertEquals(DriveTags.EVENTS, events.tag)
+        assertEquals(EVENTS_FOLDER_NAME, events.file.name)
+        assertEquals(cache.folder, events.parentId)
+        assertFalse(events.shared)
         assertEquals("https://s/x.m3u8", EventDocument.parse(item.content).stream)
     }
 
@@ -80,6 +84,33 @@ class SosliveDriveTest {
         drive.folderId()
         api.items.clear()
         val created = drive.createEvent(Instant.now(), EventDocument())
-        assertEquals(cache.folder, api.item(created.fileId).parentId)
+        assertEquals(cache.folder, api.item(api.item(created.fileId).parentId!!).parentId)
+    }
+
+    @Test
+    fun `events folder is reused, oldest wins, and loose root files are moved into it`() = runTest {
+        val root = drive.folderId()
+        api.addFile("oldEvent", DriveTags.EVENT, root)
+        api.addFile("oldImage", DriveTags.IMAGE, root)
+        api.addFile("config", DriveTags.CONFIG, root)
+        val first = api.createFolder(EVENTS_FOLDER_NAME, DriveTags.EVENTS, root).id
+        api.createFolder(EVENTS_FOLDER_NAME, DriveTags.EVENTS, root)
+        assertEquals(first, drive.eventsFolderId())
+        assertEquals(first, api.item("oldEvent").parentId)
+        assertEquals(first, api.item("oldImage").parentId)
+        assertEquals(root, api.item("config").parentId)
+        assertEquals(listOf("oldEvent"), drive.listEvents().map { it.fileId })
+    }
+
+    @Test
+    fun `viewers are added to and removed from the events folder`() = runTest {
+        val added = drive.addViewer(" anna@example.com ")
+        assertEquals("anna@example.com", added.email)
+        val events = drive.eventsFolderId()
+        assertEquals(listOf(added), api.item(events).viewers)
+        assertTrue(api.item(drive.folderId()).viewers.isEmpty())
+        assertEquals(listOf(added), drive.viewers())
+        drive.removeViewer(added.id)
+        assertTrue(drive.viewers().isEmpty())
     }
 }

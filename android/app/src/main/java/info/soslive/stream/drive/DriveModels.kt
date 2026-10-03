@@ -22,12 +22,15 @@ val DriveJson = Json { ignoreUnknownKeys = true; prettyPrint = false }
 /** appProperties {"soslive": <tag>} values. */
 object DriveTags {
     const val ROOT = "root"
+    /** SOSlive/events: the events and their images - the only folder that is shared with people. */
+    const val EVENTS = "events"
     const val CONFIG = "config"
     const val EVENT = "event"
     const val IMAGE = "image"
 }
 
 const val FOLDER_NAME = "SOSlive"
+const val EVENTS_FOLDER_NAME = "events"
 const val CONFIG_NAME = "config.json"
 const val JSON_MIME = "application/json"
 const val FOLDER_MIME = "application/vnd.google-apps.folder"

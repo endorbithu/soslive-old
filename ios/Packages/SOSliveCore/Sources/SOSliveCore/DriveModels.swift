@@ -4,11 +4,13 @@ import Foundation
 
 /// appProperties {"soslive": <tag>} values.
 public enum DriveTag: String {
-    case root, config, event, image
+    /// `events` = SOSlive/events: events + images, the only folder shared with people.
+    case root, config, events, event, image
 }
 
 public enum DriveNames {
     public static let folder = "SOSlive"
+    public static let eventsFolder = "events"
     public static let config = "config.json"
     public static let jsonMime = "application/json"
     public static let folderMime = "application/vnd.google-apps.folder"

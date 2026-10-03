@@ -98,3 +98,17 @@
 "error.stream_url" = "Invalid URL (the server needs rtmp:// or rtmps://, the others http(s)://)";
 "action.save_stream" = "Save streaming settings";
 "stream.settings_saved" = "Streaming settings saved on this phone";
+
+/* Who can see your events */
+"settings.viewers_section" = "Who can see your events";
+"settings.viewers_note" = "People you add here can see all your events (location, photos, stream links, your messages) on the SOSlive website with their own Google account. They cannot see your settings or change anything. Google sends them an e-mail with the link.";
+"viewers.empty" = "Nobody yet – events are only visible through the links you send.";
+"field.viewer_email" = "Google account e-mail";
+"action.add_viewer" = "Add";
+"action.remove" = "Remove";
+"viewer.added" = "%@ can now see your events";
+"viewer.removed" = "%@ can no longer see your events";
+"viewer.remove_confirm" = "Remove %@?";
+"viewer.remove_note" = "They will no longer see your events on the website. Links you have already sent keep working.";
+"error.viewer_self" = "That is your own account";
+"error.viewer_exists" = "Already added";

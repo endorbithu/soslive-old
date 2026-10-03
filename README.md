@@ -7,7 +7,8 @@ küldi (YouTube Live, Twitch, Cloudflare Stream, saját szerver…); a web
 (`https://<webapp>`) a Drive fájlokat csak olvassa.
 
 A műszaki szerződés: „SOSlive mobil app – átállási útmutató” és a
-`docs/EVENT_FORMAT.md` (endorbithu/soslive-webapp).
+`docs/EVENT_FORMAT.md` (endorbithu/soslive-webapp). A web oldali teendők:
+[`docs/WEBAPP_CHANGES.md`](docs/WEBAPP_CHANGES.md).
 
 ## Repó szerkezet
 
@@ -24,14 +25,23 @@ A műszaki szerződés: „SOSlive mobil app – átállási útmutató” és a
 mobil app ──(Google token, drive.file)──► user Google Drive-ja
    │                                         SOSlive/            (privát mappa)
    │                                           config.json       (privát, csak az app írja)
-   │                                           2026-09-29 14:03:22.json  (esemény, "anyone with link")
-   │                                           img ….jpg          (fotó, "anyone with link")
+   │                                           events/           (a user által választott emberekkel
+   │                                                              megosztva, csak olvasásra)
+   │                                             2026-09-29 14:03:22.json  (esemény, "anyone with link")
+   │                                             img ….jpg        (fotó, "anyone with link")
    └──(RTMP/RTMPS)──► a user saját stream szolgáltatója ──► néző  ◄── web: https://<webapp>/e/{fileId}
 ```
 
 - **Belépés:** csak Google (`openid email profile drive.file`); a token a telefonon marad.
 - **SOSlive mappa:** belépéskor megkeresi (`appProperties {"soslive":"root"}`), ha nincs,
   létrehozza; több találatnál a legrégebbi az érvényes.
+- **events almappa:** `appProperties {"soslive":"events"}`, a SOSlive mappán belül; az
+  események és képek ide kerülnek. A korábban közvetlenül a SOSlive mappába írt események /
+  képek az első használatkor átkerülnek ide.
+- **Kik látják az eseményeidet:** a Beállításokban a user Google fiókokat (e-mail) adhat
+  hozzá / távolíthat el. Ez a Drive-on az `events` mappa `reader` megosztása (Google e-mailt
+  küld a címzettnek); a megosztás öröklődik, így az új események is látszanak neki. A
+  `config.json` nincs megosztva. A lista forrása maga a Drive (permissions), nem a config.
 - **config.json:** értesítendő e-mailek / telefonszámok, `max_events`; csak az app írja,
   ismeretlen mezőket megőriz.
 - **Esemény:** fájlnév a kezdés ideje UTC-ben, tartalom

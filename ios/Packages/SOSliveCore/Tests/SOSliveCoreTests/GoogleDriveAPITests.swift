@@ -151,6 +151,39 @@ final class GoogleDriveAPITests: XCTestCase {
         XCTAssertEqual(try JSON.object(from: trash.httpBody!)["trashed"] as? Bool, true)
     }
 
+    func testSharingEndpoints() async throws {
+        StubURLProtocol.reset([
+            .init(status: 200, body: #"{"id":"ev","name":"events"}"#),
+            .init(status: 200, body: #"{"id":"e1"}"#),
+            .init(status: 200, body: #"{"permissions":[{"id":"o","type":"user","role":"owner","emailAddress":"me@example.com"},{"id":"a","type":"anyone","role":"reader"},{"id":"p1","type":"user","role":"reader","emailAddress":"anna@example.com","displayName":"Anna"}]}"#),
+            .init(status: 200, body: #"{"id":"p2","emailAddress":"bela@example.com"}"#),
+            .init(status: 204, body: ""),
+        ])
+        _ = try await api.createFolder(name: DriveNames.eventsFolder, tag: .events, parentId: "root1")
+        try await api.moveFile(id: "e1", from: "root1", to: "ev")
+        let people = try await api.listUserPermissions(id: "ev")
+        let added = try await api.shareWithUser(id: "ev", email: "bela@example.com")
+        try await api.removePermission(id: "ev", permissionId: "p1")
+
+        let r = StubURLProtocol.requests
+        let folder = try JSON.object(from: r[0].httpBody!)
+        XCTAssertEqual(folder["parents"] as? [String], ["root1"])
+        XCTAssertEqual((folder["appProperties"] as? JSONObject)?["soslive"] as? String, "events")
+        XCTAssertEqual(r[1].httpMethod, "PATCH")
+        XCTAssertTrue(r[1].url!.query!.contains("addParents=ev"))
+        XCTAssertTrue(r[1].url!.query!.contains("removeParents=root1"))
+        XCTAssertEqual(people, [DrivePermission(id: "p1", email: "anna@example.com", displayName: "Anna")])
+        XCTAssertEqual(r[2].url?.path, "/drive/v3/files/ev/permissions")
+        XCTAssertTrue(r[3].url!.query!.contains("sendNotificationEmail=true"))
+        let share = try JSON.object(from: r[3].httpBody!)
+        XCTAssertEqual(share["type"] as? String, "user")
+        XCTAssertEqual(share["role"] as? String, "reader")
+        XCTAssertEqual(share["emailAddress"] as? String, "bela@example.com")
+        XCTAssertEqual(added, DrivePermission(id: "p2", email: "bela@example.com"))
+        XCTAssertEqual(r[4].httpMethod, "DELETE")
+        XCTAssertEqual(r[4].url?.path, "/drive/v3/files/ev/permissions/p1")
+    }
+
     func testRetryableClassification() {
         XCTAssertTrue(DriveError.http(status: 429, message: "").retryable)
         XCTAssertTrue(DriveError.http(status: 503, message: "").retryable)

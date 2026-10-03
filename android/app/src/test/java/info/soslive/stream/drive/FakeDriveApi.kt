@@ -7,10 +7,11 @@ class FakeDriveApi : DriveApi {
     data class Item(
         val file: DriveFile,
         val tag: String,
-        val parentId: String?,
+        var parentId: String?,
         val folder: Boolean,
         var content: ByteArray = ByteArray(0),
         var shared: Boolean = false,
+        val viewers: MutableList<DrivePermission> = mutableListOf(),
     )
 
     val items = mutableListOf<Item>()
@@ -36,8 +37,12 @@ class FakeDriveApi : DriveApi {
 
     override suspend fun getFile(id: String): DriveFile? = items.firstOrNull { it.file.id == id }?.file
 
-    override suspend fun createFolder(name: String, tag: String): DriveFile =
-        DriveFile(nextId(), name, tick()).also { items += Item(it, tag, null, folder = true) }
+    override suspend fun createFolder(name: String, tag: String, parentId: String?): DriveFile =
+        DriveFile(nextId(), name, tick()).also { items += Item(it, tag, parentId, folder = true) }
+
+    fun addFile(id: String, tag: String, parentId: String) {
+        items += Item(DriveFile(id, "$id.json", tick()), tag, parentId, folder = false)
+    }
 
     override suspend fun createFile(name: String, mimeType: String, parentId: String, tag: String, content: ByteArray): DriveFile {
         if (items.none { it.file.id == parentId && !it.file.trashed }) throw DriveNotFoundException("parent $parentId")
@@ -62,6 +67,22 @@ class FakeDriveApi : DriveApi {
     override suspend fun trash(id: String) {
         val index = items.indexOfFirst { it.file.id == id }
         items[index] = items[index].copy(file = items[index].file.copy(trashed = true))
+    }
+
+    override suspend fun moveFile(id: String, fromParentId: String, toParentId: String) {
+        val item = items.firstOrNull { it.file.id == id } ?: throw DriveNotFoundException(id)
+        check(item.parentId == fromParentId)
+        item.parentId = toParentId
+    }
+
+    override suspend fun listUserPermissions(id: String): List<DrivePermission> =
+        (items.firstOrNull { it.file.id == id && !it.file.trashed } ?: throw DriveNotFoundException(id)).viewers.toList()
+
+    override suspend fun shareWithUser(id: String, email: String): DrivePermission =
+        DrivePermission("p${++seq}", email).also { item(id).viewers += it }
+
+    override suspend fun removePermission(id: String, permissionId: String) {
+        if (!item(id).viewers.removeAll { it.id == permissionId }) throw DriveNotFoundException(permissionId)
     }
 
     fun item(id: String) = items.first { it.file.id == id }

@@ -17,6 +17,19 @@ public struct DriveFile: Equatable {
     }
 }
 
+/// A person the events folder is shared with (Drive "user" permission, not the owner).
+public struct DrivePermission: Equatable, Identifiable {
+    public var id: String
+    public var email: String
+    public var displayName: String
+
+    public init(id: String, email: String, displayName: String = "") {
+        self.id = id
+        self.email = email
+        self.displayName = displayName
+    }
+}
+
 public enum DriveError: Error, Equatable, LocalizedError {
     /// HTTP error from the Drive API.
     case http(status: Int, message: String)
@@ -56,7 +69,7 @@ public protocol DriveAPI: AnyObject {
     func find(tag: DriveTag, parentId: String?, newestFirst: Bool, folderOnly: Bool) async throws -> [DriveFile]
     /// Metadata, or nil when the file does not exist any more.
     func file(id: String) async throws -> DriveFile?
-    func createFolder(name: String, tag: DriveTag) async throws -> DriveFile
+    func createFolder(name: String, tag: DriveTag, parentId: String?) async throws -> DriveFile
     func createFile(name: String, mimeType: String, parentId: String, tag: DriveTag, content: Data) async throws -> DriveFile
     /// Replaces the whole content of the file.
     func updateContent(id: String, mimeType: String, content: Data) async throws
@@ -64,6 +77,13 @@ public protocol DriveAPI: AnyObject {
     /// "anyone with the link" reader permission.
     func shareAnyoneReader(id: String) async throws
     func trash(id: String) async throws
+    /// Moves a file from one folder to another.
+    func moveFile(id: String, from fromParentId: String, to toParentId: String) async throws
+    /// People the file / folder is shared with by e-mail (owner and "anyone" excluded).
+    func listUserPermissions(id: String) async throws -> [DrivePermission]
+    /// Read-only share with one Google account; Google e-mails the person a link.
+    func shareWithUser(id: String, email: String) async throws -> DrivePermission
+    func removePermission(id: String, permissionId: String) async throws
     /// URL that shows a publicly shared image in an <img> tag.
     func publicImageURL(id: String) -> String
 }
@@ -126,8 +146,9 @@ public final class GoogleDriveAPI: DriveAPI {
         }
     }
 
-    public func createFolder(name: String, tag: DriveTag) async throws -> DriveFile {
-        let metadata: JSONObject = ["name": name, "mimeType": DriveNames.folderMime, "appProperties": ["soslive": tag.rawValue]]
+    public func createFolder(name: String, tag: DriveTag, parentId: String?) async throws -> DriveFile {
+        var metadata: JSONObject = ["name": name, "mimeType": DriveNames.folderMime, "appProperties": ["soslive": tag.rawValue]]
+        if let parentId { metadata["parents"] = [parentId] }
         let data = try await send("POST", url(api, "files", query: [URLQueryItem(name: "fields", value: Self.fileFields)]),
                                   body: JSON.data(metadata), contentType: "application/json; charset=UTF-8")
         guard let file = Self.driveFile(try JSON.object(from: data)) else { throw DriveError.parse("No file id") }
@@ -167,6 +188,47 @@ public final class GoogleDriveAPI: DriveAPI {
     public func trash(id: String) async throws {
         _ = try await send("PATCH", url(api, "files/\(id)", query: [URLQueryItem(name: "fields", value: "id")]),
                            body: JSON.data(["trashed": true]), contentType: "application/json; charset=UTF-8")
+    }
+
+    public func moveFile(id: String, from fromParentId: String, to toParentId: String) async throws {
+        let query = [URLQueryItem(name: "addParents", value: toParentId), URLQueryItem(name: "removeParents", value: fromParentId),
+                     URLQueryItem(name: "fields", value: "id")]
+        _ = try await send("PATCH", url(api, "files/\(id)", query: query), body: JSON.data([:]), contentType: "application/json; charset=UTF-8")
+    }
+
+    public func listUserPermissions(id: String) async throws -> [DrivePermission] {
+        var result: [DrivePermission] = []
+        var pageToken: String?
+        repeat {
+            var query = [URLQueryItem(name: "fields", value: "nextPageToken,permissions(id,type,role,emailAddress,displayName)"),
+                         URLQueryItem(name: "pageSize", value: "100")]
+            if let pageToken { query.append(URLQueryItem(name: "pageToken", value: pageToken)) }
+            let body = try JSON.object(from: try await send("GET", url(api, "files/\(id)/permissions", query: query)))
+            for p in body["permissions"] as? [JSONObject] ?? [] where p["type"] as? String == "user" && p["role"] as? String != "owner" {
+                if let permission = Self.permission(p) { result.append(permission) }
+            }
+            pageToken = body["nextPageToken"] as? String
+        } while pageToken != nil
+        return result
+    }
+
+    public func shareWithUser(id: String, email: String) async throws -> DrivePermission {
+        let query = [URLQueryItem(name: "sendNotificationEmail", value: "true"), URLQueryItem(name: "fields", value: "id,emailAddress,displayName")]
+        let data = try await send("POST", url(api, "files/\(id)/permissions", query: query),
+                                  body: JSON.data(["type": "user", "role": "reader", "emailAddress": email]),
+                                  contentType: "application/json; charset=UTF-8")
+        guard var permission = Self.permission(try JSON.object(from: data)) else { throw DriveError.parse("No permission id") }
+        if permission.email.isEmpty { permission.email = email }
+        return permission
+    }
+
+    public func removePermission(id: String, permissionId: String) async throws {
+        _ = try await send("DELETE", url(api, "files/\(id)/permissions/\(permissionId)", query: []))
+    }
+
+    static func permission(_ object: JSONObject) -> DrivePermission? {
+        guard let id = object["id"] as? String else { return nil }
+        return DrivePermission(id: id, email: object["emailAddress"] as? String ?? "", displayName: object["displayName"] as? String ?? "")
     }
 
     // MARK: - Plumbing
