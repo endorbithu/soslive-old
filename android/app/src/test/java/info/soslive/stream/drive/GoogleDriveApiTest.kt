@@ -104,6 +104,50 @@ class GoogleDriveApiTest {
     }
 
     @Test
+    fun `sharing endpoints - subfolder, move, list, add and remove people`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"id":"ev","name":"events"}"""))
+        server.enqueue(MockResponse().setBody("""{"id":"e1"}"""))
+        server.enqueue(
+            MockResponse().setBody(
+                """{"permissions":[
+                    {"id":"o","type":"user","role":"owner","emailAddress":"me@example.com"},
+                    {"id":"a","type":"anyone","role":"reader"},
+                    {"id":"p1","type":"user","role":"reader","emailAddress":"anna@example.com","displayName":"Anna"}
+                ]}""",
+            ),
+        )
+        server.enqueue(MockResponse().setBody("""{"id":"p2","emailAddress":"bela@example.com"}"""))
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.createFolder(EVENTS_FOLDER_NAME, DriveTags.EVENTS, "root1")
+        api.moveFile("e1", "root1", "ev")
+        val people = api.listUserPermissions("ev")
+        val added = api.shareWithUser("ev", "bela@example.com")
+        api.removePermission("ev", "p1")
+
+        val folder = server.takeRequest().body.readUtf8()
+        assertTrue(folder, folder.contains(""""parents":["root1"]"""))
+        assertTrue(folder, folder.contains(""""appProperties":{"soslive":"events"}"""))
+
+        val move = server.takeRequest()
+        assertEquals("PATCH", move.method)
+        assertEquals("ev", move.requestUrl!!.queryParameter("addParents"))
+        assertEquals("root1", move.requestUrl!!.queryParameter("removeParents"))
+
+        assertEquals(listOf(DrivePermission("p1", "anna@example.com", "Anna")), people)
+        assertEquals("/drive/v3/files/ev/permissions", server.takeRequest().requestUrl!!.encodedPath)
+
+        val share = server.takeRequest()
+        assertEquals("true", share.requestUrl!!.queryParameter("sendNotificationEmail"))
+        assertEquals("""{"type":"user","role":"reader","emailAddress":"bela@example.com"}""", share.body.readUtf8())
+        assertEquals(DrivePermission("p2", "bela@example.com"), added)
+
+        val remove = server.takeRequest()
+        assertEquals("DELETE", remove.method)
+        assertEquals("/drive/v3/files/ev/permissions/p1", remove.requestUrl!!.encodedPath)
+    }
+
+    @Test
     fun `retryable classification`() {
         assertTrue(DriveException(429, "x").retryable)
         assertTrue(DriveException(503, "x").retryable)

@@ -10,6 +10,7 @@ final class FakeDriveAPI: DriveAPI {
         var folder: Bool
         var content = Data()
         var shared = false
+        var viewers: [DrivePermission] = []
     }
 
     private let lock = NSLock()
@@ -48,12 +49,47 @@ final class FakeDriveAPI: DriveAPI {
 
     func file(id: String) async throws -> DriveFile? { items.first { $0.file.id == id }?.file }
 
-    func createFolder(name: String, tag: DriveTag) async throws -> DriveFile {
+    func createFolder(name: String, tag: DriveTag, parentId: String?) async throws -> DriveFile {
         lock.lock(); defer { lock.unlock() }
         let (id, created) = next()
         let file = DriveFile(id: id, name: name, createdTime: created)
-        _items.append(Item(file: file, tag: tag, parentId: nil, folder: true))
+        _items.append(Item(file: file, tag: tag, parentId: parentId, folder: true))
         return file
+    }
+
+    func addFile(_ id: String, tag: DriveTag, parentId: String) {
+        lock.lock(); defer { lock.unlock() }
+        let (_, created) = next()
+        _items.append(Item(file: DriveFile(id: id, name: "\(id).json", createdTime: created), tag: tag, parentId: parentId, folder: false))
+    }
+
+    func moveFile(id: String, from fromParentId: String, to toParentId: String) async throws {
+        lock.lock(); defer { lock.unlock() }
+        guard let index = _items.firstIndex(where: { $0.file.id == id }), _items[index].parentId == fromParentId else {
+            throw DriveError.notFound(id)
+        }
+        _items[index].parentId = toParentId
+    }
+
+    func listUserPermissions(id: String) async throws -> [DrivePermission] {
+        guard let item = items.first(where: { $0.file.id == id && !$0.file.trashed }) else { throw DriveError.notFound(id) }
+        return item.viewers
+    }
+
+    func shareWithUser(id: String, email: String) async throws -> DrivePermission {
+        lock.lock(); defer { lock.unlock() }
+        seq += 1
+        let permission = DrivePermission(id: "p\(seq)", email: email)
+        guard let index = _items.firstIndex(where: { $0.file.id == id }) else { throw DriveError.notFound(id) }
+        _items[index].viewers.append(permission)
+        return permission
+    }
+
+    func removePermission(id: String, permissionId: String) async throws {
+        lock.lock(); defer { lock.unlock() }
+        guard let index = _items.firstIndex(where: { $0.file.id == id }),
+              _items[index].viewers.contains(where: { $0.id == permissionId }) else { throw DriveError.notFound(permissionId) }
+        _items[index].viewers.removeAll { $0.id == permissionId }
     }
 
     func createFile(name: String, mimeType: String, parentId: String, tag: DriveTag, content: Data) async throws -> DriveFile {

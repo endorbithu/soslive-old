@@ -110,4 +110,17 @@
     <string name="error_stream_url">Invalid URL (the server needs rtmp:// or rtmps://, the others http(s)://)</string>
     <string name="action_save_stream">Save streaming settings</string>
     <string name="stream_settings_saved">Streaming settings saved on this phone</string>
+    <string name="settings_viewers_section">Who can see your events</string>
+    <string name="settings_viewers_note">People you add here can see all your events (location, photos, stream links, your messages) on the SOSlive website with their own Google account. They cannot see your settings or change anything. Google sends them an e-mail with the link.</string>
+    <string name="viewers_empty">Nobody yet – events are only visible through the links you send.</string>
+    <string name="field_viewer_email">Google account e-mail</string>
+    <string name="field_viewer_email_hint">e.g. mom@gmail.com</string>
+    <string name="action_add_viewer">Add</string>
+    <string name="action_remove">Remove</string>
+    <string name="viewer_added">%1$s can now see your events</string>
+    <string name="viewer_removed">%1$s can no longer see your events</string>
+    <string name="viewer_remove_confirm">Remove %1$s?</string>
+    <string name="viewer_remove_note">They will no longer see your events on the website. Links you have already sent keep working.</string>
+    <string name="error_viewer_self">That is your own account</string>
+    <string name="error_viewer_exists">Already added</string>
 </resources>

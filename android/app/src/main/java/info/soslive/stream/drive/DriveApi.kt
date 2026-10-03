@@ -10,6 +10,9 @@ data class DriveFile(
     val trashed: Boolean = false,
 )
 
+/** A person the events folder is shared with (Drive "user" permission, not the owner). */
+data class DrivePermission(val id: String, val email: String, val displayName: String = "")
+
 /** HTTP error from the Drive API. */
 open class DriveException(val status: Int, message: String) : IOException(message) {
     /** 429, 5xx and 403 rate limits are worth retrying; everything else is not. */
@@ -38,7 +41,7 @@ interface DriveApi {
     /** Metadata, or null if the file does not exist any more. */
     suspend fun getFile(id: String): DriveFile?
 
-    suspend fun createFolder(name: String, tag: String): DriveFile
+    suspend fun createFolder(name: String, tag: String, parentId: String? = null): DriveFile
 
     suspend fun createFile(name: String, mimeType: String, parentId: String, tag: String, content: ByteArray): DriveFile
 
@@ -51,6 +54,17 @@ interface DriveApi {
     suspend fun shareAnyoneReader(id: String)
 
     suspend fun trash(id: String)
+
+    /** Moves a file from one folder to another. */
+    suspend fun moveFile(id: String, fromParentId: String, toParentId: String)
+
+    /** People the file / folder is shared with by e-mail (owner and "anyone" excluded). */
+    suspend fun listUserPermissions(id: String): List<DrivePermission>
+
+    /** Read-only share with one Google account; Google e-mails the person a link. */
+    suspend fun shareWithUser(id: String, email: String): DrivePermission
+
+    suspend fun removePermission(id: String, permissionId: String)
 
     /** URL that shows a publicly shared image in an <img> tag. */
     fun publicImageUrl(id: String): String = "https://drive.google.com/thumbnail?id=$id&sz=w1600"

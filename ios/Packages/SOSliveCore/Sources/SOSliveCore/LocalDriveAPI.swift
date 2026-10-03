@@ -12,6 +12,12 @@ public final class LocalDriveAPI: DriveAPI {
         var created: Date
         var trashed = false
         var shared = false
+        var viewers: [Viewer]? = nil
+    }
+
+    private struct Viewer: Codable {
+        var id: String
+        var email: String
     }
 
     private let root: URL
@@ -56,9 +62,10 @@ public final class LocalDriveAPI: DriveAPI {
         try withIndex { index in index.first { $0.id == id }.map(Self.file) }
     }
 
-    public func createFolder(name: String, tag: DriveTag) async throws -> DriveFile {
+    public func createFolder(name: String, tag: DriveTag, parentId: String?) async throws -> DriveFile {
         try withIndex { index in
-            let meta = Meta(id: UUID().uuidString, name: name, tag: tag.rawValue, parentId: nil, folder: true, created: now())
+            if let parentId { _ = try Self.require(index, parentId) }
+            let meta = Meta(id: UUID().uuidString, name: name, tag: tag.rawValue, parentId: parentId, folder: true, created: now())
             index.append(meta)
             return Self.file(meta)
         }
@@ -99,6 +106,40 @@ public final class LocalDriveAPI: DriveAPI {
         try withIndex { index in
             guard let position = index.firstIndex(where: { $0.id == id }) else { throw DriveError.notFound(id) }
             index[position].trashed = true
+        }
+    }
+
+    public func moveFile(id: String, from fromParentId: String, to toParentId: String) async throws {
+        try withIndex { index in
+            _ = try Self.require(index, toParentId)
+            guard let position = index.firstIndex(where: { $0.id == id }) else { throw DriveError.notFound(id) }
+            index[position].parentId = toParentId
+        }
+    }
+
+    // Simulated: nobody is actually notified or given access.
+    public func listUserPermissions(id: String) async throws -> [DrivePermission] {
+        try withIndex { index in
+            (try Self.require(index, id).viewers ?? []).map { DrivePermission(id: $0.id, email: $0.email) }
+        }
+    }
+
+    public func shareWithUser(id: String, email: String) async throws -> DrivePermission {
+        try withIndex { index in
+            _ = try Self.require(index, id)
+            let position = index.firstIndex { $0.id == id }!
+            let viewer = Viewer(id: UUID().uuidString, email: email)
+            index[position].viewers = (index[position].viewers ?? []) + [viewer]
+            return DrivePermission(id: viewer.id, email: email)
+        }
+    }
+
+    public func removePermission(id: String, permissionId: String) async throws {
+        try withIndex { index in
+            _ = try Self.require(index, id)
+            let position = index.firstIndex { $0.id == id }!
+            guard index[position].viewers?.contains(where: { $0.id == permissionId }) == true else { throw DriveError.notFound(permissionId) }
+            index[position].viewers?.removeAll { $0.id == permissionId }
         }
     }
 

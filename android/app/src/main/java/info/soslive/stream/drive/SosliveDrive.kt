@@ -24,9 +24,14 @@ interface DriveCache {
 }
 
 /**
- * The SOSlive folder on the user's Drive: config.json and one JSON file per event.
- * Follows the mobile app spec: the oldest "SOSlive" folder wins, config.json is private,
- * event files are shared "anyone with the link", old events are rotated to the trash.
+ * The SOSlive folder on the user's Drive:
+ * ```
+ * SOSlive/            private
+ *   config.json       private
+ *   events/           events + images; shared read-only with the people the user picks
+ * ```
+ * Follows the mobile app spec: the oldest "SOSlive" (and "events") folder wins, event files are
+ * also shared "anyone with the link", old events are rotated to the trash.
  */
 class SosliveDrive(
     private val drive: DriveApi,
@@ -34,6 +39,9 @@ class SosliveDrive(
     private val webappUrl: String,
     private val clock: Clock = Clock.systemUTC(),
 ) {
+    /** (root folder id, events folder id) once verified in this process. */
+    @Volatile private var eventsFolder: Pair<String, String>? = null
+
     fun link(fileId: String): String = "${webappUrl.trimEnd('/')}/e/$fileId"
 
     /** Finds (or creates) the SOSlive folder. Re-searches when the cached id was deleted/trashed. */
@@ -61,6 +69,39 @@ class SosliveDrive(
     } catch (e: DriveNotFoundException) {
         cache.setFolderId(null)
         block(folderId())
+    }
+
+    /**
+     * Finds (or creates) SOSlive/events. Events and images left directly in the root folder
+     * (written before the events folder existed) are moved into it.
+     */
+    suspend fun eventsFolderId(): String {
+        val root = folderId()
+        eventsFolder?.let { (cachedRoot, events) -> if (cachedRoot == root) return events }
+        val existing = drive.findByTag(DriveTags.EVENTS, parentId = root, folderOnly = true).firstOrNull()?.id
+        val id = existing ?: run {
+            drive.createFolder(EVENTS_FOLDER_NAME, DriveTags.EVENTS, root)
+            drive.findByTag(DriveTags.EVENTS, parentId = root, folderOnly = true).firstOrNull()?.id
+                ?: error("Created events folder is not visible")
+        }
+        moveLooseFiles(root, id)
+        eventsFolder = root to id
+        return id
+    }
+
+    private suspend fun moveLooseFiles(root: String, events: String) {
+        val loose = drive.findByTag(DriveTags.EVENT, parentId = root) + drive.findByTag(DriveTags.IMAGE, parentId = root)
+        // Best effort - a file that cannot be moved now is retried on the next app start.
+        loose.forEach { runCatching { drive.moveFile(it.id, root, events) } }
+    }
+
+    /** Runs [block] with the events folder id; if a folder vanished meanwhile (404), finds them again once. */
+    private suspend fun <T> inEventsFolder(block: suspend (String) -> T): T = try {
+        block(eventsFolderId())
+    } catch (e: DriveNotFoundException) {
+        eventsFolder = null
+        cache.setFolderId(null)
+        block(eventsFolderId())
     }
 
     // ---------------------------------------------------------------- config.json
@@ -95,7 +136,7 @@ class SosliveDrive(
     /** Creates the event file, shares it "anyone with the link" and returns the link to send out. */
     suspend fun createEvent(start: Instant, document: EventDocument): CreatedEvent {
         val name = eventFileName(start)
-        val file = inFolder { folder -> drive.createFile(name, JSON_MIME, folder, DriveTags.EVENT, document.encode()) }
+        val file = inEventsFolder { folder -> drive.createFile(name, JSON_MIME, folder, DriveTags.EVENT, document.encode()) }
         val shareError = try {
             drive.shareAnyoneReader(file.id)
             null
@@ -107,14 +148,14 @@ class SosliveDrive(
 
     suspend fun readEvent(fileId: String): EventDocument = EventDocument.parse(drive.download(fileId))
 
-    suspend fun listEvents(): List<EventSummary> = inFolder { folder ->
+    suspend fun listEvents(): List<EventSummary> = inEventsFolder { folder ->
         drive.findByTag(DriveTags.EVENT, parentId = folder, newestFirst = true)
             .map { EventSummary(it.id, eventTitle(it.name), it.createdTime, link(it.id)) }
     }
 
     /** Moves events beyond the newest [maxEvents] to the trash (restorable for 30 days). */
     suspend fun rotate(maxEvents: Int): Int {
-        val events = inFolder { folder -> drive.findByTag(DriveTags.EVENT, parentId = folder, newestFirst = true) }
+        val events = inEventsFolder { folder -> drive.findByTag(DriveTags.EVENT, parentId = folder, newestFirst = true) }
         val old = events.drop(maxEvents.coerceAtLeast(1))
         old.forEach { drive.trash(it.id) }
         return old.size
@@ -123,12 +164,23 @@ class SosliveDrive(
     /** Uploads a JPEG next to the events, shares it publicly and returns a URL usable in an <img>. */
     suspend fun uploadImage(jpeg: ByteArray): String {
         val name = "img " + eventFileName(Instant.now(clock)).removeSuffix(".json") + ".jpg"
-        val file = inFolder { folder -> drive.createFile(name, "image/jpeg", folder, DriveTags.IMAGE, jpeg) }
+        val file = inEventsFolder { folder -> drive.createFile(name, "image/jpeg", folder, DriveTags.IMAGE, jpeg) }
         drive.shareAnyoneReader(file.id)
         return drive.publicImageUrl(file.id)
     }
 
+    // ---------------------------------------------------------------- viewers
+
+    /** People who can see all events (read-only share of the events folder). */
+    suspend fun viewers(): List<DrivePermission> = inEventsFolder { drive.listUserPermissions(it) }
+
+    /** Shares the events folder read-only with [email]; Google sends them an e-mail with the link. */
+    suspend fun addViewer(email: String): DrivePermission = inEventsFolder { drive.shareWithUser(it, email.trim()) }
+
+    suspend fun removeViewer(permissionId: String) = inEventsFolder { drive.removePermission(it, permissionId) }
+
     suspend fun forgetLocalState() {
+        eventsFolder = null
         cache.setFolderId(null)
         cache.setConfig(null)
     }

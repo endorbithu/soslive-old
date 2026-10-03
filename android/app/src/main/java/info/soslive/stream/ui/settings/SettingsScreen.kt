@@ -1,6 +1,7 @@
 package info.soslive.stream.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import info.soslive.stream.R
 import info.soslive.stream.core.ui.UiText
+import info.soslive.stream.drive.DrivePermission
 import info.soslive.stream.stream.StreamSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +60,7 @@ fun SettingsScreen(
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
     var confirmSignOut by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf<DrivePermission?>(null) }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -121,6 +126,18 @@ fun SettingsScreen(
             Text(stringResource(R.string.settings_web_note), style = MaterialTheme.typography.bodySmall)
 
             HorizontalDivider()
+            ViewersSection(
+                viewers = state.viewers,
+                loading = state.viewersLoading,
+                email = state.viewerEmail,
+                error = state.viewerError,
+                busy = state.viewerBusy,
+                onEmailChange = viewModel::onViewerEmailChange,
+                onAdd = viewModel::addViewer,
+                onRemove = { confirmRemove = it },
+            )
+
+            HorizontalDivider()
             StreamSection(
                 stream = state.stream,
                 errors = state.streamErrors,
@@ -134,6 +151,21 @@ fun SettingsScreen(
                 Text(stringResource(R.string.action_logout), modifier = Modifier.padding(start = 8.dp))
             }
         }
+    }
+
+    confirmRemove?.let { viewer ->
+        AlertDialog(
+            onDismissRequest = { confirmRemove = null },
+            title = { Text(stringResource(R.string.viewer_remove_confirm, viewer.email)) },
+            text = { Text(stringResource(R.string.viewer_remove_note)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRemove = null
+                    viewModel.removeViewer(viewer)
+                }) { Text(stringResource(R.string.action_remove)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmRemove = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
     }
 
     if (confirmSignOut) {
@@ -214,4 +246,48 @@ private fun UrlField(value: String, onChange: (String) -> Unit, label: Int, hint
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+/** People who see all events on the web with their own Google account (read-only share of SOSlive/events). */
+@Composable
+private fun ViewersSection(
+    viewers: List<DrivePermission>,
+    loading: Boolean,
+    email: String,
+    error: UiText?,
+    busy: Boolean,
+    onEmailChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onRemove: (DrivePermission) -> Unit,
+) {
+    Text(stringResource(R.string.settings_viewers_section), style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.settings_viewers_note), style = MaterialTheme.typography.bodySmall)
+    when {
+        loading -> LinearProgressIndicator(Modifier.fillMaxWidth())
+        viewers.isEmpty() -> Text(stringResource(R.string.viewers_empty), style = MaterialTheme.typography.bodyMedium)
+        else -> viewers.forEach { viewer ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    if (viewer.displayName.isNotBlank()) Text(viewer.displayName, style = MaterialTheme.typography.bodyMedium)
+                    Text(viewer.email, style = MaterialTheme.typography.bodySmall)
+                }
+                IconButton(onClick = { onRemove(viewer) }, enabled = !busy) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_remove))
+                }
+            }
+        }
+    }
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        label = { Text(stringResource(R.string.field_viewer_email)) },
+        isError = error != null,
+        supportingText = { Text(error?.asString() ?: stringResource(R.string.field_viewer_email_hint)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    OutlinedButton(onClick = onAdd, enabled = !busy && !loading && email.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.action_add_viewer))
+    }
 }

@@ -131,7 +131,11 @@ final class SosliveDriveTests: XCTestCase {
         let item = api.item(created.fileId)
         XCTAssertTrue(item.shared)
         XCTAssertEqual(item.tag, .event)
-        XCTAssertEqual(item.parentId, cache.folderId)
+        let events = api.item(item.parentId!)
+        XCTAssertEqual(events.tag, .events)
+        XCTAssertEqual(events.file.name, DriveNames.eventsFolder)
+        XCTAssertEqual(events.parentId, cache.folderId)
+        XCTAssertFalse(events.shared)
         XCTAssertEqual(try EventDocument(data: item.content).stream, "https://s/x.m3u8")
     }
 
@@ -171,14 +175,44 @@ final class SosliveDriveTests: XCTestCase {
         _ = try await drive.folderId()
         api.clear()
         let created = try await drive.createEvent(start: Date(), document: EventDocument())
-        XCTAssertEqual(api.item(created.fileId).parentId, cache.folderId)
+        XCTAssertEqual(api.item(api.item(created.fileId).parentId!).parentId, cache.folderId)
+    }
+
+    func testEventsFolderReusedAndLooseFilesMoved() async throws {
+        let root = try await drive.folderId()
+        api.addFile("oldEvent", tag: .event, parentId: root)
+        api.addFile("oldImage", tag: .image, parentId: root)
+        api.addFile("config", tag: .config, parentId: root)
+        let first = try await api.createFolder(name: DriveNames.eventsFolder, tag: .events, parentId: root).id
+        _ = try await api.createFolder(name: DriveNames.eventsFolder, tag: .events, parentId: root)
+        let events = try await drive.eventsFolderId()
+        XCTAssertEqual(events, first)
+        XCTAssertEqual(api.item("oldEvent").parentId, first)
+        XCTAssertEqual(api.item("oldImage").parentId, first)
+        XCTAssertEqual(api.item("config").parentId, root)
+        let listed = try await drive.listEvents().map(\.fileId)
+        XCTAssertEqual(listed, ["oldEvent"])
+    }
+
+    func testViewersAddedToAndRemovedFromEventsFolder() async throws {
+        let added = try await drive.addViewer(email: " anna@example.com ")
+        XCTAssertEqual(added.email, "anna@example.com")
+        let events = try await drive.eventsFolderId()
+        XCTAssertEqual(api.item(events).viewers, [added])
+        let root = try await drive.folderId()
+        XCTAssertTrue(api.item(root).viewers.isEmpty)
+        let viewers = try await drive.viewers()
+        XCTAssertEqual(viewers, [added])
+        try await drive.removeViewer(permissionId: added.id)
+        let none = try await drive.viewers()
+        XCTAssertTrue(none.isEmpty)
     }
 }
 
 final class EventWriterTests: XCTestCase {
     private func makeWriter(_ api: FakeDriveAPI, now: @escaping @Sendable () -> Date = Date.init,
                             onStopped: @escaping @Sendable (Error) -> Void = { _ in }) async throws -> EventWriter {
-        let folder = try await api.createFolder(name: DriveNames.folder, tag: .root)
+        let folder = try await api.createFolder(name: DriveNames.folder, tag: .root, parentId: nil)
         let file = try await api.createFile(name: "e.json", mimeType: DriveNames.jsonMime, parentId: folder.id, tag: .event, content: EventDocument().encoded())
         return EventWriter(drive: api, fileId: file.id, initial: EventDocument(stream: "s"), now: now,
                            debounce: 0.05, initialBackoff: 0.02, maxBackoff: 0.1, onStopped: onStopped)

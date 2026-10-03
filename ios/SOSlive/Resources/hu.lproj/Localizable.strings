@@ -98,3 +98,17 @@
 "error.stream_url" = "Érvénytelen URL (a szerverhez rtmp:// vagy rtmps://, a többihez http(s):// kell)";
 "action.save_stream" = "Stream beállítások mentése";
 "stream.settings_saved" = "Stream beállítások elmentve ezen a telefonon";
+
+/* Kik látják az eseményeidet */
+"settings.viewers_section" = "Kik látják az eseményeidet";
+"settings.viewers_note" = "Akit itt hozzáadsz, a saját Google fiókjával a SOSlive weboldalon látja az összes eseményedet (helyadat, fényképek, stream linkek, üzeneteid). A beállításaidat nem látja, és semmit nem módosíthat. A Google e-mailben elküldi neki a linket.";
+"viewers.empty" = "Még senki – az eseményeid csak az elküldött linkeken keresztül láthatók.";
+"field.viewer_email" = "Google fiók e-mail címe";
+"action.add_viewer" = "Hozzáadás";
+"action.remove" = "Eltávolítás";
+"viewer.added" = "%@ mostantól látja az eseményeidet";
+"viewer.removed" = "%@ már nem látja az eseményeidet";
+"viewer.remove_confirm" = "Eltávolítod: %@?";
+"viewer.remove_note" = "Nem fogja látni az eseményeidet a weboldalon. A már elküldött linkek továbbra is működnek.";
+"error.viewer_self" = "Ez a saját fiókod";
+"error.viewer_exists" = "Már hozzáadtad";

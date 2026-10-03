@@ -108,4 +108,17 @@
     <string name="error_stream_url">Érvénytelen URL (a szerverhez rtmp:// vagy rtmps://, a többihez http(s):// kell)</string>
     <string name="action_save_stream">Stream beállítások mentése</string>
     <string name="stream_settings_saved">Stream beállítások elmentve ezen a telefonon</string>
+    <string name="settings_viewers_section">Kik látják az eseményeidet</string>
+    <string name="settings_viewers_note">Akit itt hozzáadsz, a saját Google fiókjával a SOSlive weboldalon látja az összes eseményedet (helyadat, fényképek, stream linkek, üzeneteid). A beállításaidat nem látja, és semmit nem módosíthat. A Google e-mailben elküldi neki a linket.</string>
+    <string name="viewers_empty">Még senki – az eseményeid csak az elküldött linkeken keresztül láthatók.</string>
+    <string name="field_viewer_email">Google fiók e-mail címe</string>
+    <string name="field_viewer_email_hint">pl. anya@gmail.com</string>
+    <string name="action_add_viewer">Hozzáadás</string>
+    <string name="action_remove">Eltávolítás</string>
+    <string name="viewer_added">%1$s mostantól látja az eseményeidet</string>
+    <string name="viewer_removed">%1$s már nem látja az eseményeidet</string>
+    <string name="viewer_remove_confirm">Eltávolítod: %1$s?</string>
+    <string name="viewer_remove_note">Nem fogja látni az eseményeidet a weboldalon. A már elküldött linkek továbbra is működnek.</string>
+    <string name="error_viewer_self">Ez a saját fiókod</string>
+    <string name="error_viewer_exists">Már hozzáadtad</string>
 </resources>

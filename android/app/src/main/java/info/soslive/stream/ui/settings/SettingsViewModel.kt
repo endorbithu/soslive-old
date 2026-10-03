@@ -10,6 +10,7 @@ import info.soslive.stream.auth.UserAccount
 import info.soslive.stream.core.ui.UiText
 import info.soslive.stream.core.ui.toUiText
 import info.soslive.stream.drive.ContactRules
+import info.soslive.stream.drive.DrivePermission
 import info.soslive.stream.drive.SosConfig
 import info.soslive.stream.drive.SosliveDrive
 import info.soslive.stream.stream.StreamSettings
@@ -35,6 +36,12 @@ data class SettingsUiState(
     /** The user's own streaming service - stored only on this phone. */
     val stream: StreamSettings = StreamSettings(),
     val streamErrors: Set<StreamSettings.Field> = emptySet(),
+    /** People the events folder is shared with (read-only). */
+    val viewers: List<DrivePermission> = emptyList(),
+    val viewersLoading: Boolean = true,
+    val viewerEmail: String = "",
+    val viewerError: UiText? = null,
+    val viewerBusy: Boolean = false,
 )
 
 /** Edits config.json on Drive - the web only shows it ("can only be changed in the mobile app"). */
@@ -62,6 +69,66 @@ class SettingsViewModel @Inject constructor(
                 _state.update { it.copy(message = e.toUiText()) }
             }
             _state.update { it.copy(loading = false) }
+        }
+        loadViewers()
+    }
+
+    // ---------------------------------------------------------------- viewers
+
+    private fun loadViewers() {
+        viewModelScope.launch {
+            try {
+                val viewers = drive.viewers()
+                _state.update { it.copy(viewers = viewers) }
+            } catch (e: Exception) {
+                _state.update { it.copy(message = e.toUiText()) }
+            }
+            _state.update { it.copy(viewersLoading = false) }
+        }
+    }
+
+    fun onViewerEmailChange(value: String) = _state.update { it.copy(viewerEmail = value, viewerError = null) }
+
+    /** Shares the events folder read-only; Google e-mails the person a link. */
+    fun addViewer() {
+        val s = _state.value
+        if (s.viewerBusy) return
+        val email = s.viewerEmail.trim()
+        val error = when {
+            !ContactRules.isValidEmail(email) -> UiText.Res(R.string.error_emails_invalid, email)
+            email.equals(s.account?.email, ignoreCase = true) -> UiText.Res(R.string.error_viewer_self)
+            s.viewers.any { it.email.equals(email, ignoreCase = true) } -> UiText.Res(R.string.error_viewer_exists)
+            else -> null
+        }
+        if (error != null) {
+            _state.update { it.copy(viewerError = error) }
+            return
+        }
+        _state.update { it.copy(viewerBusy = true) }
+        viewModelScope.launch {
+            try {
+                val added = drive.addViewer(email)
+                _state.update {
+                    it.copy(viewers = it.viewers + added, viewerEmail = "", message = UiText.Res(R.string.viewer_added, email))
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(viewerError = e.toUiText()) }
+            }
+            _state.update { it.copy(viewerBusy = false) }
+        }
+    }
+
+    fun removeViewer(viewer: DrivePermission) {
+        if (_state.value.viewerBusy) return
+        _state.update { it.copy(viewerBusy = true) }
+        viewModelScope.launch {
+            try {
+                drive.removeViewer(viewer.id)
+                _state.update { it.copy(viewers = it.viewers - viewer, message = UiText.Res(R.string.viewer_removed, viewer.email)) }
+            } catch (e: Exception) {
+                _state.update { it.copy(message = e.toUiText()) }
+            }
+            _state.update { it.copy(viewerBusy = false) }
         }
     }
 
