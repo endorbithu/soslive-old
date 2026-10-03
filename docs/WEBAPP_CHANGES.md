@@ -83,4 +83,50 @@ permissions listája), a `config.json`-be nem kerül.
 
 Az ismeretlen mezőket a web hagyja figyelmen kívül.
 
+## 4. Képek URL-je (`img` bejegyzés `url` mezője)
+
+```
+https://drive.google.com/thumbnail?id={fileId}&sz=w1600
+```
+
+- A képfájl (`soslive=image`) az `events` mappában van, és **„anyone with the link”**
+  megosztással rendelkezik, ezért ez az URL bejelentkezés nélkül, közvetlenül betölthető
+  `<img>`-ként. Nem HTML oldal, hanem egy legfeljebb 1600 px széles kép.
+- Figyelem: ez a végpont nincs hivatalosan dokumentálva. Általában működik, de lehet lassú,
+  és esetenként korlátozhatják. Ajánlott tartalék a weben arra az esetre, ha az `<img>` hibát
+  ad (`onerror`):
+  1. a fájl azonosítója az URL `id=` paraméteréből kiolvasható;
+  2. `GET https://www.googleapis.com/drive/v3/files/{id}?alt=media&key=<API kulcs>`
+     publikus fájlra hivatalosan működik; vagy a bejelentkezett user tokenjével;
+  3. a válaszból blob, majd `URL.createObjectURL(blob)` → `<img src>`.
+- Ha egyszerűbb, a mobil app az `img` bejegyzésbe külön `id` mezőt is írhat (pl.
+  `{"t":…,"type":"img","url":…,"id":"<fileId>"}`), így a webnek nem kell az URL-t
+  feldolgoznia. Szóljatok, ha kéritek.
+
+## 5. Valódi fiókos teszt – mobil oldal
+
+A CI-ben készült debug APK erre **nem alkalmas**: Google kliens azonosító nélkül szimulált
+Drive-val fut, és a CI ideiglenes aláíró kulcsa nincs regisztrálva. A tesztelő saját gépén
+kell buildelni:
+
+- **Android:** az `android/local.properties` fájlban `soslive.webappUrl` és
+  `soslive.googleWebClientId` (a web Cloud projektjének **Web** kliens azonosítója). A saját
+  debug kulcs SHA-1-ét (`./gradlew signingReport`) fel kell venni a projekt **Android** OAuth
+  kliensébe (package `info.soslive.stream`). Build Android Studióból.
+- **iOS:** `ios/Config/Secrets.xcconfig`: `SOSLIVE_WEBAPP_URL`, `GOOGLE_IOS_CLIENT_ID`,
+  `GOOGLE_REVERSED_CLIENT_ID`, `SOSLIVE_DEVELOPMENT_TEAM`; build Xcode-ból (Mac kell).
+- Ha az OAuth consent screen „Testing” módban van, X és Y fiókja is legyen tesztfelhasználó.
+
+X lépései a telefonon (a web doksi lépéssorához illesztve):
+1. Belépés Google-lel, Drive engedély.
+2. Egy esemény létrehozása (a Fotó a leggyorsabb, és képet is ad).
+3. Beállítások → „Kik látják az eseményeidet” → Y e-mail címe → Hozzáadás.
+4. *(Y a weben a Pickerben kiválasztja X `events` mappáját, és ellenőrzi a 2. eseményt.)*
+5. **X új eseményt indít fotóval** – ez a döntő lépés: Y a weben frissít, és látnia kell az
+   új eseményt **és** a képet is, újbóli Picker-választás nélkül.
+6. Beállítások → Y eltávolítása → Y-nál a mappa csendben kiesik.
+
+Ha az 5. lépésben Y nem látja az új eseményt, akkor a `drive.file` + Picker mappaválasztás
+nem elég, és megcsináljuk az `index.json` tartalékot.
+
 Kérlek, vezessétek át ezeket a `docs/EVENT_FORMAT.md`-be. Ha valami nem világos, szóljatok!
