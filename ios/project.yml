@@ -15,9 +15,10 @@ configFiles:
 packages:
   SOSliveCore:
     path: Packages/SOSliveCore
+  # 2.x: 1.9.x crashes the Swift 6.4 compiler (Xcode 27) in AudioNode.swift.
   HaishinKit:
-    url: https://github.com/shogo4405/HaishinKit.swift
-    minorVersion: 1.9.0
+    url: https://github.com/HaishinKit/HaishinKit.swift
+    minorVersion: 2.2.5
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     majorVersion: 8.0.0
@@ -31,6 +32,9 @@ targets:
     dependencies:
       - package: SOSliveCore
       - package: HaishinKit
+        product: HaishinKit
+      - package: HaishinKit
+        product: RTMPHaishinKit
       - package: GoogleSignIn
         product: GoogleSignIn
     settings:
