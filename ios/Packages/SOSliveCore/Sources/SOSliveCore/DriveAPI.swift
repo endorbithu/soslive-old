@@ -3,7 +3,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public struct DriveFile: Equatable {
+public struct DriveFile: Equatable, Sendable {
     public var id: String
     public var name: String
     public var createdTime: Date?
@@ -18,7 +18,7 @@ public struct DriveFile: Equatable {
 }
 
 /// A person the events folder is shared with (Drive "user" permission, not the owner).
-public struct DrivePermission: Equatable, Identifiable {
+public struct DrivePermission: Equatable, Identifiable, Sendable {
     public var id: String
     public var email: String
     public var displayName: String
@@ -30,7 +30,7 @@ public struct DrivePermission: Equatable, Identifiable {
     }
 }
 
-public enum DriveError: Error, Equatable, LocalizedError {
+public enum DriveError: Error, Equatable, LocalizedError, Sendable {
     /// HTTP error from the Drive API.
     case http(status: Int, message: String)
     /// 404 - the file (or its folder) was deleted by the user.
@@ -64,7 +64,7 @@ public enum DriveError: Error, Equatable, LocalizedError {
 
 /// The few Drive operations SOSlive needs. Files are found by their appProperties tag
 /// ({"soslive": tag}); with the drive.file scope the app only sees files it created.
-public protocol DriveAPI: AnyObject {
+public protocol DriveAPI: AnyObject, Sendable {
     /// Non-trashed files with the tag, optionally inside `parentId`, ordered by creation time.
     func find(tag: DriveTag, parentId: String?, newestFirst: Bool, folderOnly: Bool) async throws -> [DriveFile]
     /// Metadata, or nil when the file does not exist any more.
@@ -93,7 +93,7 @@ public extension DriveAPI {
 }
 
 /// Supplies OAuth access tokens with the drive.file scope.
-public protocol AccessTokenProvider: AnyObject {
+public protocol AccessTokenProvider: AnyObject, Sendable {
     /// `forceRefresh` is true after a 401 - the cached token is stale.
     func accessToken(forceRefresh: Bool) async throws -> String
 }

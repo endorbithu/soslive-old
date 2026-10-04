@@ -210,7 +210,7 @@ final class SosliveDriveTests: XCTestCase {
 }
 
 final class EventWriterTests: XCTestCase {
-    private func makeWriter(_ api: FakeDriveAPI, now: @escaping @Sendable () -> Date = Date.init,
+    private func makeWriter(_ api: FakeDriveAPI, now: @escaping @Sendable () -> Date = { Date() },
                             onStopped: @escaping @Sendable (Error) -> Void = { _ in }) async throws -> EventWriter {
         let folder = try await api.createFolder(name: DriveNames.folder, tag: .root, parentId: nil)
         let file = try await api.createFile(name: "e.json", mimeType: DriveNames.jsonMime, parentId: folder.id, tag: .event, content: EventDocument().encoded())

@@ -1,7 +1,7 @@
 import Foundation
 
 /// An event file that was just created on Drive.
-public struct CreatedEvent {
+public struct CreatedEvent: Sendable {
     public var fileId: String
     public var name: String
     public var link: String
@@ -10,7 +10,7 @@ public struct CreatedEvent {
     public var shareError: String?
 }
 
-public struct EventSummary: Identifiable, Equatable {
+public struct EventSummary: Identifiable, Equatable, Sendable {
     public var id: String { fileId }
     public var fileId: String
     public var title: String
