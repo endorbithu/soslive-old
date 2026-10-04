@@ -6,12 +6,16 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-15
+    # HaishinKit 2.2 needs the iOS 26+ SDK (Xcode 26 or newer).
+    runs-on: macos-26
     defaults:
       run:
         working-directory: ios
     steps:
       - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
       - name: Xcode version
         run: xcodebuild -version
       - name: Core package unit tests
