@@ -3,7 +3,7 @@ import Foundation
 // File formats shared with the web app (endorbithu/soslive-webapp docs/EVENT_FORMAT.md).
 
 /// appProperties {"soslive": <tag>} values.
-public enum DriveTag: String {
+public enum DriveTag: String, Sendable {
     /// `events` = SOSlive/events: events + images, the only folder shared with people.
     case root, config, events, event, image
 }
@@ -66,7 +66,8 @@ public func parseISO(_ value: String) -> Date? {
 }
 
 /// config.json - written only by the mobile app; unknown fields are kept and written back.
-public struct SosConfig {
+/// Holds only JSONSerialization values (strings, numbers, arrays, dictionaries), so it is safe to share.
+public struct SosConfig: @unchecked Sendable {
     public static let defaultMaxEvents = 100
 
     public var notificationEmails: [String]
@@ -104,7 +105,8 @@ public struct SosConfig {
 }
 
 /// One entry of an event file. Unknown entry types / fields are preserved as-is.
-public struct EventEntry {
+/// Holds only JSONSerialization values, so it is safe to share.
+public struct EventEntry: @unchecked Sendable {
     public var json: JSONObject
 
     public init(json: JSONObject) { self.json = json }
@@ -133,7 +135,7 @@ public struct EventEntry {
 /// "stream" is a directly playable URL (HLS / MP4), "stream_page" the viewer page of the user's
 /// streaming service, "recording" where the recording can be downloaded / watched later.
 /// The optional fields are only written when set.
-public struct EventDocument {
+public struct EventDocument: @unchecked Sendable {
     public var stream: String
     public var streamPage: String
     public var recording: String
@@ -197,7 +199,7 @@ public enum ContactRules {
     }
 }
 
-public struct GeoPoint: Equatable {
+public struct GeoPoint: Equatable, Sendable {
     public var lat: Double
     public var lng: Double
     public var accuracy: Double?

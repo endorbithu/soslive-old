@@ -3,7 +3,7 @@ import Foundation
 /// The user's own streaming service (YouTube Live, Facebook Live, Twitch, Cloudflare Stream,
 /// a self-hosted MediaMTX, ...). Entered in the app's settings and kept only on the phone
 /// (the stream key in the Keychain).
-public struct StreamSettings: Equatable, Codable {
+public struct StreamSettings: Equatable, Codable, Sendable {
     /// RTMP(S) ingest URL, e.g. rtmp://a.rtmp.youtube.com/live2
     public var rtmpURL: String
     /// Stream key (secret). Empty when the URL already contains it as its last path component.
@@ -18,7 +18,7 @@ public struct StreamSettings: Equatable, Codable {
     /// Optional placeholder in `recordingURL`: the event start time (ISO 8601 UTC).
     public static let startPlaceholder = "{start}"
 
-    public enum Field: Hashable, CaseIterable { case rtmpURL, playbackURL, pageURL, recordingURL }
+    public enum Field: Hashable, CaseIterable, Sendable { case rtmpURL, playbackURL, pageURL, recordingURL }
 
     public init(rtmpURL: String = "", streamKey: String = "", playbackURL: String = "", pageURL: String = "", recordingURL: String = "") {
         self.rtmpURL = rtmpURL
@@ -54,7 +54,7 @@ public struct StreamSettings: Equatable, Codable {
 }
 
 /// Where the app publishes and which URLs go into the event file.
-public struct StreamSession: Equatable {
+public struct StreamSession: Equatable, Sendable {
     /// RTMP application URL (connect), e.g. rtmp://a.rtmp.youtube.com/live2
     public var rtmpURL: String
     /// Stream name to publish (the stream key).

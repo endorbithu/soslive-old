@@ -2,7 +2,8 @@ import Foundation
 
 /// Simulated Drive for development without a Google Cloud project: the same operations,
 /// stored in a local directory. Links built from these ids cannot be opened by anyone else.
-public final class LocalDriveAPI: DriveAPI {
+/// All state is on disk and guarded by `lock`.
+public final class LocalDriveAPI: DriveAPI, @unchecked Sendable {
     private struct Meta: Codable {
         var id: String
         var name: String
@@ -21,10 +22,10 @@ public final class LocalDriveAPI: DriveAPI {
     }
 
     private let root: URL
-    private let now: () -> Date
+    private let now: @Sendable () -> Date
     private let lock = NSLock()
 
-    public init(root: URL, now: @escaping () -> Date = Date.init) {
+    public init(root: URL, now: @escaping @Sendable () -> Date = { Date() }) {
         self.root = root
         self.now = now
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -22,7 +22,7 @@ public actor EventWriter {
     public private(set) var stopped = false
 
     public init(drive: DriveAPI, fileId: String, initial: EventDocument,
-                now: @escaping @Sendable () -> Date = Date.init,
+                now: @escaping @Sendable () -> Date = { Date() },
                 debounce: TimeInterval = 1.5, initialBackoff: TimeInterval = 2, maxBackoff: TimeInterval = 60,
                 positionInterval: TimeInterval = 30,
                 onStopped: @escaping @Sendable (Error) -> Void = { _ in }) {

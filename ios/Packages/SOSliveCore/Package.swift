@@ -12,5 +12,7 @@ let package = Package(
     targets: [
         .target(name: "SOSliveCore"),
         .testTarget(name: "SOSliveCoreTests", dependencies: ["SOSliveCore"]),
-    ]
+    ],
+    // Pinned so a newer toolchain does not switch to the stricter Swift 6 mode on its own.
+    swiftLanguageVersions: [.v5]
 )

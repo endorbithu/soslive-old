@@ -16,6 +16,11 @@ jobs:
         run: xcodebuild -version
       - name: Core package unit tests
         run: swift test --package-path Packages/SOSliveCore
+      # Newer Xcode versions report concurrency problems as errors: catch them here first.
+      - name: Core package strict concurrency check
+        run: |
+          swift build --package-path Packages/SOSliveCore \
+            -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
       - name: Generate Xcode project
         run: |
           brew install xcodegen

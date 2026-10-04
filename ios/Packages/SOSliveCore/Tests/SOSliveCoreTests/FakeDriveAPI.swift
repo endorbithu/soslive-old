@@ -2,7 +2,7 @@ import Foundation
 @testable import SOSliveCore
 
 /// In-memory DriveAPI with failure injection for updateContent.
-final class FakeDriveAPI: DriveAPI {
+final class FakeDriveAPI: DriveAPI, @unchecked Sendable {
     struct Item {
         var file: DriveFile
         var tag: DriveTag
@@ -14,6 +14,12 @@ final class FakeDriveAPI: DriveAPI {
     }
 
     private let lock = NSLock()
+
+    /// NSLock.lock() is unavailable directly in async functions; lock through this sync helper.
+    private func locked<T>(_ body: () throws -> T) rethrows -> T {
+        lock.lock(); defer { lock.unlock() }
+        return try body()
+    }
     private var _items: [Item] = []
     private var _uploads: [Data] = []
     private var _updateFailures: [Error] = []
@@ -50,11 +56,12 @@ final class FakeDriveAPI: DriveAPI {
     func file(id: String) async throws -> DriveFile? { items.first { $0.file.id == id }?.file }
 
     func createFolder(name: String, tag: DriveTag, parentId: String?) async throws -> DriveFile {
-        lock.lock(); defer { lock.unlock() }
-        let (id, created) = next()
-        let file = DriveFile(id: id, name: name, createdTime: created)
-        _items.append(Item(file: file, tag: tag, parentId: parentId, folder: true))
-        return file
+        return try locked {
+            let (id, created) = next()
+            let file = DriveFile(id: id, name: name, createdTime: created)
+            _items.append(Item(file: file, tag: tag, parentId: parentId, folder: true))
+            return file
+        }
     }
 
     func addFile(_ id: String, tag: DriveTag, parentId: String) {
@@ -64,11 +71,12 @@ final class FakeDriveAPI: DriveAPI {
     }
 
     func moveFile(id: String, from fromParentId: String, to toParentId: String) async throws {
-        lock.lock(); defer { lock.unlock() }
-        guard let index = _items.firstIndex(where: { $0.file.id == id }), _items[index].parentId == fromParentId else {
-            throw DriveError.notFound(id)
+        try locked {
+            guard let index = _items.firstIndex(where: { $0.file.id == id }), _items[index].parentId == fromParentId else {
+                throw DriveError.notFound(id)
+            }
+            _items[index].parentId = toParentId
         }
-        _items[index].parentId = toParentId
     }
 
     func listUserPermissions(id: String) async throws -> [DrivePermission] {
@@ -77,36 +85,40 @@ final class FakeDriveAPI: DriveAPI {
     }
 
     func shareWithUser(id: String, email: String) async throws -> DrivePermission {
-        lock.lock(); defer { lock.unlock() }
-        seq += 1
-        let permission = DrivePermission(id: "p\(seq)", email: email)
-        guard let index = _items.firstIndex(where: { $0.file.id == id }) else { throw DriveError.notFound(id) }
-        _items[index].viewers.append(permission)
-        return permission
+        return try locked {
+            seq += 1
+            let permission = DrivePermission(id: "p\(seq)", email: email)
+            guard let index = _items.firstIndex(where: { $0.file.id == id }) else { throw DriveError.notFound(id) }
+            _items[index].viewers.append(permission)
+            return permission
+        }
     }
 
     func removePermission(id: String, permissionId: String) async throws {
-        lock.lock(); defer { lock.unlock() }
-        guard let index = _items.firstIndex(where: { $0.file.id == id }),
-              _items[index].viewers.contains(where: { $0.id == permissionId }) else { throw DriveError.notFound(permissionId) }
-        _items[index].viewers.removeAll { $0.id == permissionId }
+        try locked {
+            guard let index = _items.firstIndex(where: { $0.file.id == id }),
+                  _items[index].viewers.contains(where: { $0.id == permissionId }) else { throw DriveError.notFound(permissionId) }
+            _items[index].viewers.removeAll { $0.id == permissionId }
+        }
     }
 
     func createFile(name: String, mimeType: String, parentId: String, tag: DriveTag, content: Data) async throws -> DriveFile {
-        lock.lock(); defer { lock.unlock() }
-        guard _items.contains(where: { $0.file.id == parentId && !$0.file.trashed }) else { throw DriveError.notFound(parentId) }
-        let (id, created) = next()
-        let file = DriveFile(id: id, name: name, createdTime: created)
-        _items.append(Item(file: file, tag: tag, parentId: parentId, folder: false, content: content))
-        return file
+        return try locked {
+            guard _items.contains(where: { $0.file.id == parentId && !$0.file.trashed }) else { throw DriveError.notFound(parentId) }
+            let (id, created) = next()
+            let file = DriveFile(id: id, name: name, createdTime: created)
+            _items.append(Item(file: file, tag: tag, parentId: parentId, folder: false, content: content))
+            return file
+        }
     }
 
     func updateContent(id: String, mimeType: String, content: Data) async throws {
-        lock.lock(); defer { lock.unlock() }
-        if !_updateFailures.isEmpty { throw _updateFailures.removeFirst() }
-        guard let index = _items.firstIndex(where: { $0.file.id == id && !$0.file.trashed }) else { throw DriveError.notFound(id) }
-        _items[index].content = content
-        _uploads.append(content)
+        try locked {
+            if !_updateFailures.isEmpty { throw _updateFailures.removeFirst() }
+            guard let index = _items.firstIndex(where: { $0.file.id == id && !$0.file.trashed }) else { throw DriveError.notFound(id) }
+            _items[index].content = content
+            _uploads.append(content)
+        }
     }
 
     func download(id: String) async throws -> Data {
@@ -116,13 +128,15 @@ final class FakeDriveAPI: DriveAPI {
 
     func shareAnyoneReader(id: String) async throws {
         if let shareFailure { throw shareFailure }
-        lock.lock(); defer { lock.unlock() }
-        if let index = _items.firstIndex(where: { $0.file.id == id }) { _items[index].shared = true }
+        try locked {
+            if let index = _items.firstIndex(where: { $0.file.id == id }) { _items[index].shared = true }
+        }
     }
 
     func trash(id: String) async throws {
-        lock.lock(); defer { lock.unlock() }
-        if let index = _items.firstIndex(where: { $0.file.id == id }) { _items[index].file.trashed = true }
+        try locked {
+            if let index = _items.firstIndex(where: { $0.file.id == id }) { _items[index].file.trashed = true }
+        }
     }
 }
 
